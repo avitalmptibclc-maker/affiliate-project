@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>פלאייר A5 — יועצות ההנקה של אילת</title>
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&family=Playpen+Sans+Hebrew:wght@400;500;700&display=swap" />
+  <style>
+    /* ===== הגדרות הדפסה: A5 לאורך ===== */
+    @page { size: A5 portrait; margin: 0; }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Rubik', Arial, sans-serif;
+      background: #e7ddd3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 12px 60px;
+      color: #7c533c;
+    }
+
+    /* ===== הפלאייר עצמו — מידות A5 מדויקות ===== */
+    .flyer {
+      width: 148mm;
+      height: 210mm;
+      position: relative;
+      overflow: hidden;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      background:
+        radial-gradient(circle at 18% 12%, #fff6ee 0%, rgba(255,246,238,0) 42%),
+        radial-gradient(circle at 85% 88%, #fbe6e0 0%, rgba(251,230,224,0) 45%),
+        linear-gradient(160deg, #fefaf6 0%, #fbf2ea 55%, #f7e9e0 100%);
+      box-shadow: 0 12px 40px rgba(124,83,60,0.22);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 11mm 11mm 9mm;
+    }
+
+    /* עיטורים רכים ברקע */
+    .blob { position: absolute; border-radius: 50%; filter: blur(2px); opacity: .5; }
+    .blob.b1 { width: 120px; height: 120px; top: -40px; left: -35px;
+               background: radial-gradient(circle, #f4a284, transparent 70%); }
+    .blob.b2 { width: 150px; height: 150px; bottom: 40px; right: -55px;
+               background: radial-gradient(circle, #e8b4b8, transparent 70%); }
+    .ring { position: absolute; border-radius: 50%; border: 2px solid rgba(212,175,127,.35); }
+    .ring.r1 { width: 70px; height: 70px; top: 30mm; right: 8mm; }
+    .ring.r2 { width: 40px; height: 40px; bottom: 30mm; left: 10mm; }
+
+    .content { position: relative; z-index: 2; display: flex; flex-direction: column;
+               align-items: center; width: 100%; height: 100%; }
+
+    /* לוגו */
+    .logo {
+      width: 34mm; height: 34mm; border-radius: 50%; object-fit: cover;
+      border: 3px solid #fff;
+      box-shadow: 0 6px 18px rgba(124,83,60,0.25);
+      margin-bottom: 4mm;
+    }
+
+    h1 { font-size: 25px; font-weight: 800; color: #7c533c; letter-spacing: -0.3px; }
+
+    .tagline {
+      font-family: 'Playpen Sans Hebrew', 'Rubik', cursive;
+      font-size: 21px; color: #d98763; font-weight: 500; margin-top: 2px;
+    }
+
+    .divider { width: 46px; height: 3px; border-radius: 3px; margin: 4mm 0 4mm;
+               background: linear-gradient(90deg, #f4a284, #e8b4b8); }
+
+    .headline { font-size: 19px; font-weight: 700; color: #8B6B5C; line-height: 1.4;
+                max-width: 105mm; }
+
+    .body-text { font-size: 14.5px; font-weight: 400; color: #9b7d6c; line-height: 1.65;
+                 margin-top: 3mm; max-width: 110mm; }
+
+    /* כרטיס ה-QR */
+    .qr-card {
+      margin-top: auto; margin-bottom: 4mm;
+      background: #ffffff; border-radius: 22px; padding: 5mm 5mm 4mm;
+      box-shadow: 0 8px 22px rgba(124,83,60,0.18);
+      border: 1px solid #f0e0d3;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .qr-card img { width: 42mm; height: 42mm; display: block; }
+    .scan-label { margin-top: 3mm; font-size: 15px; font-weight: 700; color: #7c533c;
+                  display: flex; align-items: center; gap: 6px; }
+
+    .url {
+      font-size: 13px; font-weight: 600; color: #c0848a; letter-spacing: .2px;
+      direction: ltr; margin-bottom: 2mm;
+    }
+
+    .footer { font-size: 12.5px; color: #a98e7d; font-weight: 400; }
+    .footer .hearts { color: #e8b4b8; }
+
+    /* ===== כפתור הדפסה (לא מודפס) ===== */
+    .print-bar { margin-top: 18px; text-align: center; }
+    .print-btn {
+      font-family: 'Rubik', sans-serif; font-size: 16px; font-weight: 600;
+      background: linear-gradient(90deg, #e8b4b8, #f4a284); color: #fff; border: none;
+      padding: 12px 26px; border-radius: 999px; cursor: pointer;
+      box-shadow: 0 6px 16px rgba(232,180,184,0.5);
+    }
+    .print-hint { color: #8a6f5e; font-size: 13px; margin-top: 8px; max-width: 360px; }
+
+    @media print {
+      body { background: #fff; padding: 0; }
+      .flyer { box-shadow: none; }
+      .print-bar { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="flyer">
+    <span class="blob b1"></span>
+    <span class="blob b2"></span>
+    <span class="ring r1"></span>
+    <span class="ring r2"></span>
+
+    <div class="content">
+      <img class="logo" src="logo-circle.png" alt="לוגו" />
+      <h1>יועצות ההנקה של אילת</h1>
+      <div class="tagline">להתחלה רכה.</div>
+
+      <div class="divider"></div>
+
+      <div class="headline">מתלבטת לגבי הנקה?<br/>רוצה תמיכה, הכוונה ויד מחבקת?</div>
+      <p class="body-text">
+        כל יועצות ומדריכות ההנקה המוסמכות של אילת — מרוכזות במקום אחד.
+        סרקי את הקוד, הכירי את היועצות, וקבלי מידע ודרכי יצירת קשר ישירות אליהן.
+      </p>
+
+      <div class="qr-card">
+        <img src="qr.png" alt="קוד QR לאתר" />
+        <div class="scan-label">סרקי אותי בעזרת המצלמה בנייד 📷</div>
+      </div>
+
+      <div class="url">yoatsot-hanaka-eilat.vercel.app</div>
+      <div class="footer">
+        <span class="hearts">♥</span> כי לכל אמא מגיעה התחלה רכה <span class="hearts">♥</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="print-bar">
+    <button class="print-btn" onclick="window.print()">🖨️ הדפסה / שמירה כ-PDF</button>
+    <div class="print-hint">
+      בחלון ההדפסה: בחרי גודל נייר <b>A5</b>, שוליים <b>ללא / None</b>, וסמני
+      <b>"Background graphics"</b> כדי שהצבעים יודפסו. ניתן גם לבחור "Save as PDF".
+    </div>
+  </div>
+</body>
+</html>

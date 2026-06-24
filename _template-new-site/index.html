@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>יועצות ההנקה של אילת - להתחלה רכה</title>
+  <link rel="icon" href="logo.png" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&family=Playpen+Sans+Hebrew:wght@400;500;700&display=swap" media="print" onload="this.media='all'" />
+
+  <!-- ספריות מ-CDN (קובץ עצמאי שעובד בכל מקום) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    body { font-family: 'Rubik', Arial, sans-serif; }
+    .font-statement { font-family: 'Playpen Sans Hebrew', 'Rubik', cursive; }
+
+    /* ====== מצבי נגישות ====== */
+    html.a11y-font-1 { font-size: 112.5%; }
+    html.a11y-font-2 { font-size: 125%; }
+    html.a11y-readable, html.a11y-readable * { font-family: Arial, 'Helvetica Neue', sans-serif !important; letter-spacing: .01em; }
+    html.a11y-links a { text-decoration: underline !important; }
+    html.a11y-contrast body { background: #000 !important; }
+    html.a11y-contrast *:not(svg):not(path):not(img) { color: #fff !important; border-color: #555 !important; background-image: none !important; }
+    html.a11y-contrast .bg-white, html.a11y-contrast nav, html.a11y-contrast header, html.a11y-contrast [class*="bg-["] { background: #111 !important; }
+    html.a11y-contrast a, html.a11y-contrast button { color: #ff0 !important; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" data-presets="react">
+    const { useState, useEffect } = React;
+
+    /* ============================================================
+       ⚙️  הגדרות הדף — זה כל מה שצריך לשנות בשביל דף נחיתה חדש
+       ============================================================
+       1. SITE_PREFIX — קידומת ייחודית לדף הזה (אותיות אנגליות בלבד).
+          זה מה שמבדל את הטבלאות של הדף הזה מכל דף אחר ב-Supabase.
+          לדוגמה: 'telaviv' ייצור את הטבלאות telaviv_consultants ו-telaviv_pending_consultants.
+       2. הריצי את הקובץ tables.sql שליד הקובץ הזה ב-Supabase (אחרי שתחליפי בו את הקידומת).
+       ============================================================ */
+    const SITE_PREFIX = "CHANGE_ME";   // 👈 שני את זה (אותיות אנגליות, בלי רווחים)
+
+    const TABLES = {
+      consultants: `${SITE_PREFIX}_consultants`,
+      pending:     `${SITE_PREFIX}_pending_consultants`,
+    };
+
+    /* ====== חיבור ל-Supabase (פרויקט אחד משותף לכל הדפים) ====== */
+    const SUPABASE_URL = "https://ucodslcraqotfkjpbqvm.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjb2RzbGNyYXFvdGZranBicXZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NTc0MDksImV4cCI6MjA5NzAzMzQwOX0.pZPR3XRqiy_hiwgI8NEsEAGo_3XBNiEdKrwgypcgI8A";
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // המרה בין מבנה הנתונים באתר (additionalFields) לעמודות במסד (additional_fields)
+    const fromDb = (row) => ({
+      id: row.id,
+      name: row.name || '',
+      credentials: row.credentials || '',
+      statement: row.statement || '',
+      location: row.location || '',
+      channels: row.channels || {},
+      additionalFields: row.additional_fields || '',
+      phone: row.phone || '',
+      image: row.image || null,
+      instagram: row.instagram || '',
+      facebook: row.facebook || '',
+      website: row.website || '',
+    });
+    const toDb = (c) => ({
+      name: c.name || '',
+      credentials: c.credentials || '',
+      statement: c.statement || '',
+      location: c.location || '',
+      channels: c.channels || {},
+      additional_fields: c.additionalFields || '',
+      phone: c.phone || '',
+      image: c.image || null,
+      instagram: c.instagram || '',
+      facebook: c.facebook || '',
+      website: c.website || '',
+    });
+
+    /* ====== אייקונים מוטמעים (בסגנון lucide) ====== */
+    const Icon = ({ children, size = 20, className }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+        fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        {children}
+      </svg>
+    );
+    const Shield = (p) => <Icon {...p}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></Icon>;
+    const Phone = (p) => <Icon {...p}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z" /></Icon>;
+    const MessageCircle = (p) => <Icon {...p}><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" /></Icon>;
+    const Check = (p) => <Icon {...p}><polyline points="20 6 9 17 4 12" /></Icon>;
+    const Upload = (p) => <Icon {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></Icon>;
+    const MapPin = (p) => <Icon {...p}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></Icon>;
+    const Eye = (p) => <Icon {...p}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></Icon>;
+    const Trash = (p) => <Icon {...p}><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></Icon>;
+    const Lock = (p) => <Icon {...p}><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></Icon>;
+    const Pencil = (p) => <Icon {...p}><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></Icon>;
+    const Instagram = (p) => <Icon {...p}><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></Icon>;
+    const Facebook = (p) => <Icon {...p}><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" /></Icon>;
+    const Globe = (p) => <Icon {...p}><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></Icon>;
+    const Accessibility = (p) => <Icon {...p}><circle cx="12" cy="4" r="1.6" fill="currentColor" stroke="none" /><path d="M5 8h14" /><path d="M12 8v7" /><path d="M12 15l-3.5 5" /><path d="M12 15l3.5 5" /></Icon>;
+
+    /* ====== רכיב לוגו (נופל לעיגול גרדיאנט אם אין logo.png) ====== */
+    const Logo = ({ size = 40 }) => {
+      const [err, setErr] = useState(false);
+      if (err) {
+        return (
+          <div style={{ width: size, height: size }}
+            className="rounded-full bg-gradient-to-tr from-[#f4a284] to-[#e8b4b8] flex items-center justify-center text-white font-bold">א</div>
+        );
+      }
+      return <img src="logo.png" onError={() => setErr(true)} style={{ width: size, height: size }} className="rounded-full object-cover" alt="לוגו" />;
+    };
+
+    /* ====== תמונת פרופיל (נופלת לאות ראשונה אם אין תמונה) ====== */
+    const Avatar = ({ src, name, className }) => {
+      const letter = (name || "?").trim().charAt(0);
+      if (src) return <img src={src} alt={name} className={className + " object-cover"} />;
+      return <div className={className + " bg-gradient-to-tr from-[#f4a284] to-[#e8b4b8] flex items-center justify-center text-white text-3xl font-bold"}>{letter}</div>;
+    };
+
+    /* ====== קריאת קובץ תמונה ל-data URL ====== */
+    const readImage = (file, cb) => {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => cb(e.target.result);
+      reader.readAsDataURL(file);
+    };
+
+    // קופות חולים / טיפת חלב שדרכן היועצת מקבלת
+    const HEALTH_FUNDS = [['clalit', 'כללית'], ['maccabi', 'מכבי'], ['leumit', 'לאומית'], ['meuhedet', 'מאוחדת'], ['tipatChalav', 'טיפת חלב']];
+
+    const EMPTY_FORM = {
+      name: '', credentials: '', statement: '', location: 'אילת',
+      homeVisit: false, clinic: false, weeklyClinic: false, online: false,
+      clalit: false, maccabi: false, leumit: false, meuhedet: false, tipatChalav: false,
+      additionalFields: '', phone: '', image: null,
+      instagram: '', facebook: '', website: ''
+    };
+
+    // משלים https:// אם הוזן קישור בלי תחילית
+    const normalizeUrl = (url) => {
+      if (!url) return '#';
+      return /^https?:\/\//i.test(url) ? url : 'https://' + url.replace(/^\/+/, '');
+    };
+
+    /* ====== קוד כניסה לפאנל הניהול ולטופס היועצות ====== */
+    const ADMIN_CODE = "5845";
+    const CONSULTANT_CODE = "1984";          // קוד גישה לטופס ההצטרפות של היועצות
+    const AVITAL_WHATSAPP = "972548780808";  // הוואטסאפ של אביטל (לבקשת קוד גישה)
+
+    function App() {
+      const [view, setView] = useState('home');
+      const [consultants, setConsultants] = useState([]);
+      const [pending, setPending] = useState([]);
+      const [form, setForm] = useState(EMPTY_FORM);
+      const [adminUnlocked, setAdminUnlocked] = useState(false);
+      const [codeInput, setCodeInput] = useState('');
+      const [codeError, setCodeError] = useState(false);
+      const [consultantUnlocked, setConsultantUnlocked] = useState(false);
+      const [regCode, setRegCode] = useState('');
+      const [regError, setRegError] = useState(false);
+      const [loading, setLoading] = useState(true);
+      const [loadError, setLoadError] = useState(null);
+      const [saving, setSaving] = useState(false);
+      const [showPrivacy, setShowPrivacy] = useState(false);
+      const [sortOrder, setSortOrder] = useState('default'); // 'default' | 'a-z' | 'z-a'
+
+      // רשימת היועצות לפי בחירת המיון
+      const sortedConsultants = [...consultants].sort((a, b) => {
+        if (sortOrder === 'a-z') return (a.name || '').localeCompare(b.name || '', 'he');
+        if (sortOrder === 'z-a') return (b.name || '').localeCompare(a.name || '', 'he');
+        return 0; // ברירת מחדל — לפי סדר ההוספה
+      });
+
+      // טעינת נתונים מ-Supabase בעת כניסה לאתר
+      useEffect(() => {
+        let alive = true;
+        (async () => {
+          setLoading(true);
+          setLoadError(null);
+          try {
+            const [cRes, pRes] = await Promise.all([
+              sb.from(TABLES.consultants).select('*').order('id', { ascending: true }),
+              sb.from(TABLES.pending).select('*').order('id', { ascending: true }),
+            ]);
+            if (cRes.error) throw cRes.error;
+            if (pRes.error) throw pRes.error;
+            if (!alive) return;
+            setConsultants((cRes.data || []).map(fromDb));
+            setPending((pRes.data || []).map(fromDb));
+          } catch (err) {
+            console.error(err);
+            if (alive) setLoadError('שגיאה בטעינת הנתונים מהשרת. רענני את הדף ונסי שוב.');
+          } finally {
+            if (alive) setLoading(false);
+          }
+        })();
+        return () => { alive = false; };
+      }, []);
+
+      const getWhatsAppLink = (phone, name) => {
+        const clean = (phone || '').replace(/\D/g, '').replace(/^0/, '972');
+        const text = encodeURIComponent(`היי ${name}, הגעתי אלייך דרך דף יועצות ההנקה של אילת 🌸`);
+        return `https://wa.me/${clean}?text=${text}`;
+      };
+
+      const goAdmin = () => {
+        setView('admin');
+        if (!adminUnlocked) { setCodeInput(''); setCodeError(false); }
+      };
+
+      // שליחת בקשת הצטרפות → נשמרת בטבלת הממתינות
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (saving) return;
+        const entry = {
+          ...form,
+          channels: { homeVisit: form.homeVisit, clinic: form.clinic, weeklyClinic: form.weeklyClinic, online: form.online, clalit: form.clalit, maccabi: form.maccabi, leumit: form.leumit, meuhedet: form.meuhedet, tipatChalav: form.tipatChalav }
+        };
+        setSaving(true);
+        try {
+          if (!window.supabase || !sb || typeof sb.from !== 'function') {
+            throw new Error('ספריית החיבור לשרת (Supabase) לא נטענה. ייתכן שתוסף חוסם בדפדפן או חיבור אינטרנט חלש.');
+          }
+          const { data, error } = await sb.from(TABLES.pending).insert(toDb(entry)).select().single();
+          if (error) throw error;
+          setPending(prev => [...prev, fromDb(data)]);
+          setForm(EMPTY_FORM);
+          setView('home');
+          alert('הפרטים נשלחו בהצלחה וממתינים לאישור של אביטל! 🌸');
+        } catch (err) {
+          console.error(err);
+          alert('אופס, הייתה תקלה בשליחת הפרטים. נסי שוב בעוד רגע 🙏');
+        } finally {
+          setSaving(false);
+        }
+      };
+
+      // אישור בקשה — מקבל את הפרטים אחרי שהמנהלת ערכה אותם
+      const approve = async (id, data) => {
+        try {
+          const { data: inserted, error } = await sb.from(TABLES.consultants).insert({ ...toDb(data), status: 'approved' }).select().single();
+          if (error) throw error;
+          const { error: delErr } = await sb.from(TABLES.pending).delete().eq('id', id);
+          if (delErr) throw delErr;
+          setConsultants(prev => [...prev, fromDb(inserted)]);
+          setPending(prev => prev.filter(p => p.id !== id));
+        } catch (err) {
+          console.error(err);
+          alert('הייתה תקלה באישור הבקשה. נסי שוב 🙏');
+        }
+      };
+
+      const reject = async (id) => {
+        try {
+          const { error } = await sb.from(TABLES.pending).delete().eq('id', id);
+          if (error) throw error;
+          setPending(prev => prev.filter(p => p.id !== id));
+        } catch (err) {
+          console.error(err);
+          alert('הייתה תקלה בדחיית הבקשה. נסי שוב 🙏');
+        }
+      };
+
+      const removeConsultant = async (id) => {
+        try {
+          const { error } = await sb.from(TABLES.consultants).delete().eq('id', id);
+          if (error) throw error;
+          setConsultants(prev => prev.filter(c => c.id !== id));
+        } catch (err) {
+          console.error(err);
+          alert('הייתה תקלה בהסרת היועצת. נסי שוב 🙏');
+        }
+      };
+
+      // עדכון יועצת מפורסמת אחרי עריכה
+      const updateConsultant = async (id, data) => {
+        try {
+          const { data: updated, error } = await sb.from(TABLES.consultants).update(toDb(data)).eq('id', id).select().single();
+          if (error) throw error;
+          setConsultants(prev => prev.map(c => c.id === id ? fromDb(updated) : c));
+        } catch (err) {
+          console.error(err);
+          alert('הייתה תקלה בשמירת השינויים. נסי שוב 🙏');
+        }
+      };
+
+      const navBtn = (key, label) =>
+        <button onClick={() => key === 'admin' ? goAdmin() : setView(key)}
+          className={`px-3 sm:px-4 py-2 rounded-full text-sm whitespace-nowrap transition ${view === key ? 'bg-[#e8b4b8] text-white font-medium' : 'text-[#7c533c] hover:bg-[#fcf1e8]'}`}>
+          {label}
+        </button>;
+
+      return (
+        <div className="min-h-screen overflow-x-hidden text-[#7c533c] bg-[#fdfaf6]" dir="rtl">
+
+          {/* ניווט עליון */}
+          <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-[#f3e1d3] px-3 sm:px-6 py-3 flex justify-between items-center gap-2">
+            <div className="flex items-center gap-2 sm:gap-3 cursor-pointer min-w-0" onClick={() => setView('home')}>
+              <span className="flex-shrink-0"><Logo size={50} /></span>
+              <span className="font-bold text-sm sm:text-lg text-[#7c533c] truncate">יועצות ההנקה של אילת</span>
+            </div>
+            <div className="flex gap-1 sm:gap-3 items-center flex-shrink-0">
+              {navBtn('home', 'דף הבית')}
+              {navBtn('register', 'הצטרפות לרשימה')}
+              <button onClick={goAdmin} className={`p-2 rounded-full transition flex items-center gap-1 text-sm flex-shrink-0 ${view === 'admin' ? 'bg-[#e8b4b8] text-white' : 'text-[#c0848a] hover:bg-[#fcf1e8]'}`}>
+                <Shield size={18} /> <span className="hidden sm:inline">ניהול</span>
+              </button>
+            </div>
+          </nav>
+
+          {/* פס טעינה / שגיאה */}
+          {loading && (
+            <div className="px-6 py-3 bg-[#fdf5ee] text-[#a0715c] text-sm text-center border-b border-[#f3e1d3]">טוען נתונים…</div>
+          )}
+          {loadError && (
+            <div className="px-6 py-3 bg-[#fbe3df] text-[#b3453c] text-sm text-center border-b border-[#f3c8c2]">{loadError}</div>
+          )}
+
+          {/* ===== דף הבית ===== */}
+          {view === 'home' && (
+            <div>
+              <header className="pt-4 pb-12 px-6 text-center max-w-4xl mx-auto bg-gradient-to-b from-[#fdf5ee] to-[#fdfaf6] rounded-3xl mt-6 border border-[#f5e6da]">
+                <div className="flex justify-center -mb-8"><Logo size={300} /></div>
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#7c533c] mb-4">יש מלא יועצות הנקה באילת!</h1>
+                <p className="text-xl sm:text-2xl text-[#a0715c] max-w-2xl mx-auto font-light leading-relaxed">
+                  בחרי את יועצת ההנקה שמתאימה לך -<br />ליווי רך, מקצועי וקרוב,<br />כבר מהרגע הראשון.
+                </p>
+              </header>
+
+              <div className="max-w-3xl mx-auto px-6 mt-5">
+                <div className="bg-[#fdf8f4] border border-[#f3e1d3] rounded-2xl p-5 sm:p-6 text-center shadow-sm">
+                  <p className="text-lg sm:text-xl text-[#7c533c] leading-relaxed">
+                    מפגש עם יועצת הנקה לפני הלידה<br />יכול להקל מאוד על הימים הראשונים אחרי הלידה.<br />חשוב שתרגישי שאת בידיים טובות ושיש למי לפנות במקרה של קושי בהנקה.
+                  </p>
+                </div>
+              </div>
+
+              <main className="max-w-6xl mx-auto px-6 py-12">
+                {!loading && consultants.length === 0 && (
+                  <p className="text-center text-[#a0715c]">עדיין אין יועצות מאושרות באתר.</p>
+                )}
+
+                {consultants.length > 1 && (
+                  <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
+                    <span className="text-sm font-medium text-[#a0715c] ml-1">סדר לפי:</span>
+                    {[['default', 'ברירת מחדל'], ['a-z', 'א-ת'], ['z-a', 'ת-א']].map(([key, label]) => (
+                      <button key={key} onClick={() => setSortOrder(key)}
+                        className={`px-4 py-2 rounded-full text-sm transition ${sortOrder === key ? 'bg-[#e8b4b8] text-white font-medium' : 'bg-[#f0e4dc] text-[#7c533c] hover:bg-[#e7d6c9]'}`}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {sortedConsultants.map((coach) => (
+                    <div key={coach.id} className="bg-white rounded-3xl p-6 shadow-sm border border-[#f3e1d3] transition-all hover:shadow-md flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-start gap-4 mb-2">
+                          <Avatar src={coach.image} name={coach.name} className="w-24 h-24 rounded-full border-2 border-[#e8b4b8] shadow-sm flex-shrink-0" />
+                          <div className="min-w-0">
+                            <h3 className="text-2xl font-bold text-[#7c533c] break-words">{coach.name}</h3>
+                            <p className="text-base font-medium text-[#c0848a] mb-2">{coach.credentials}</p>
+                            <div className="flex items-center gap-1 text-sm text-[#a0715c]">
+                              <MapPin size={14} className="text-[#f4a284]" /><span>{coach.location}</span>
+                            </div>
+                            <ConsultantSocial coach={coach} />
+                          </div>
+                        </div>
+
+                        {coach.statement && (
+                          <blockquote className="font-statement bg-[#fdf8f4] border-r-4 border-[#e8b4b8] p-3 rounded-l-xl text-base text-[#8c624c] my-4 leading-relaxed">
+                            "{coach.statement}"
+                          </blockquote>
+                        )}
+
+                        <div className="flex flex-wrap gap-2 my-4">
+                          {coach.channels.homeVisit && <span className="bg-[#f0e4dc] text-[#7c533c] text-sm px-3 py-1 rounded-full font-medium">✓ ביקורי בית</span>}
+                          {coach.channels.clinic && <span className="bg-[#f0e4dc] text-[#7c533c] text-sm px-3 py-1 rounded-full font-medium">✓ טיפול בקליניקה</span>}
+                          {coach.channels.weeklyClinic && <span className="bg-[#f0e4dc] text-[#7c533c] text-sm px-3 py-1 rounded-full font-medium">✓ קליניקת אמהות שבועית</span>}
+                          {coach.channels.online && <span className="bg-[#f0e4dc] text-[#7c533c] text-sm px-3 py-1 rounded-full font-medium">✓ אונליין</span>}
+                          {HEALTH_FUNDS.map(([k, l]) => coach.channels[k] && (
+                            <span key={k} className="bg-[#fbe6e0] text-[#b56b5a] text-sm px-3 py-1 rounded-full font-medium">{k === 'tipatChalav' ? '🍼 טיפת חלב' : 'קופ״ח ' + l}</span>
+                          ))}
+                        </div>
+
+                        {coach.additionalFields && (
+                          <div className="mt-4 pt-4 border-t border-[#fdf0e6]">
+                            <h4 className="text-sm font-bold tracking-wider text-[#c0848a] mb-2">תחומי טיפול נוספים והתמחויות:</h4>
+                            <p className="text-base text-[#7c533c] leading-relaxed whitespace-pre-line">{coach.additionalFields}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 mt-6 pt-4 border-t border-[#fdf0e6]">
+                        <a href={getWhatsAppLink(coach.phone, coach.name)} target="_blank" rel="noreferrer" className="bg-[#e8b4b8] hover:bg-[#e2a3a8] text-white py-3 rounded-2xl font-medium text-base flex items-center justify-center gap-2 transition">
+                          <MessageCircle size={18} /> וואטסאפ
+                        </a>
+                        <a href={`tel:${coach.phone}`} className="border-2 border-[#f3e1d3] hover:bg-[#fcf1e8] text-[#7c533c] py-3 rounded-2xl font-medium text-base flex items-center justify-center gap-2 transition">
+                          <Phone size={18} /> שיחה
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </main>
+            </div>
+          )}
+
+          {/* ===== שער כניסה ליועצות ===== */}
+          {view === 'register' && !consultantUnlocked && (
+            <main className="max-w-md mx-auto px-6 py-16">
+              <div className="bg-white rounded-3xl p-8 shadow-sm border border-[#f3e1d3] text-center">
+                <Lock size={40} className="mx-auto text-[#c0848a] mb-4" />
+                <h2 className="text-2xl font-bold text-[#7c533c] mb-1">כניסה ליועצות הנקה</h2>
+                <p className="text-sm text-[#a0715c] mb-6">הזיני את קוד הגישה כדי למלא את טופס ההצטרפות.</p>
+                <input type="password" value={regCode} autoFocus
+                  onChange={e => { setRegCode(e.target.value); setRegError(false); }}
+                  onKeyDown={e => { if (e.key === 'Enter') { regCode === CONSULTANT_CODE ? setConsultantUnlocked(true) : setRegError(true); } }}
+                  className={INPUT + " text-center tracking-widest"} placeholder="• • • •" />
+                {regError && <p className="text-sm text-[#e05a5a] mt-2">קוד שגוי, נסי שוב.</p>}
+                <button onClick={() => regCode === CONSULTANT_CODE ? setConsultantUnlocked(true) : setRegError(true)}
+                  className="w-full mt-4 bg-[#e8b4b8] hover:bg-[#e2a3a8] text-white font-bold py-3 rounded-xl transition">כניסה</button>
+
+                <div className="mt-8 pt-6 border-t border-[#f3e1d3]">
+                  <p className="text-sm text-[#7c533c] leading-relaxed mb-4">
+                    אם את יועצת הנקה ורוצה להופיע באתר, פני לאביטל עציון בוואטסאפ כדי לקבל קוד גישה.
+                  </p>
+                  <a href={`https://wa.me/${AVITAL_WHATSAPP}?text=${encodeURIComponent('היי אביטל, אני יועצת הנקה ואשמח לקבל קוד גישה כדי להופיע באתר 🌸')}`} target="_blank" rel="noreferrer"
+                    className="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#1ebe5a] text-white font-bold px-5 py-3 rounded-xl transition shadow-sm">
+                    <MessageCircle size={18} /> פנייה לאביטל בוואטסאפ
+                  </a>
+                </div>
+              </div>
+            </main>
+          )}
+
+          {/* ===== טופס הצטרפות ===== */}
+          {view === 'register' && consultantUnlocked && (
+            <main className="max-w-2xl mx-auto px-6 py-12">
+              <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-[#f3e1d3]">
+                <h2 className="text-3xl font-bold text-[#7c533c] mb-2">הצטרפי לקהילת היועצות שלנו</h2>
+                <p className="text-sm text-[#a0715c] mb-8">מלאי את פרטייך המקצועיים. הפרטים יעברו לאישור של אביטל לפני הפרסום בדף הבית.</p>
+
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <Field label="שם מלא">
+                    <input type="text" required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className={INPUT} placeholder="לדוגמה: אביטל עציון" />
+                  </Field>
+
+                  <Field label="תארים והסמכות מקצועיות">
+                    <input type="text" required value={form.credentials} onChange={e => setForm({ ...form, credentials: e.target.value })} className={INPUT} placeholder="כתבי כאן את ההסמכות המקצועיות שלך..." />
+                  </Field>
+
+                  <Field label="הגישה שלי (המשפט שמחבר אותך לאמא)">
+                    <textarea required rows={2} value={form.statement} onChange={e => setForm({ ...form, statement: e.target.value })} className={INPUT} placeholder="משפט קצר שפונה לאמא בגובה העיניים..." />
+                  </Field>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Field label="אזור פעילות">
+                      <input type="text" value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} className={INPUT} />
+                    </Field>
+                    <Field label="טלפון (וואטסאפ ושיחות)">
+                      <input type="tel" required value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className={INPUT} placeholder="054XXXXXXX" />
+                    </Field>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold mb-3">איך ניתן לקבל אצלך שירות? (סמני את כל האפשרויות)</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {[['homeVisit', 'ביקורי בית'], ['clinic', 'טיפול בקליניקה'], ['weeklyClinic', 'קליניקת אמהות שבועית'], ['online', 'אונליין / מרחוק']].map(([key, label]) => (
+                        <label key={key} className="flex items-center gap-3 p-3 border border-[#f3e1d3] rounded-xl cursor-pointer bg-[#fdfaf6] hover:bg-white select-none">
+                          <input type="checkbox" checked={form[key]} onChange={e => setForm({ ...form, [key]: e.target.checked })} className="accent-[#e8b4b8] w-4 h-4" />
+                          <span className="text-sm font-medium">{label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold mb-3">מקבלת דרך קופת חולים / טיפת חלב? (סמני את כל המתאים)</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {HEALTH_FUNDS.map(([key, label]) => (
+                        <label key={key} className="flex items-center gap-3 p-3 border border-[#f3e1d3] rounded-xl cursor-pointer bg-[#fdfaf6] hover:bg-white select-none">
+                          <input type="checkbox" checked={form[key]} onChange={e => setForm({ ...form, [key]: e.target.checked })} className="accent-[#e8b4b8] w-4 h-4" />
+                          <span className="text-sm font-medium">{label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <Field label="תחומי טיפול נוספים והתמחויות מיוחדות">
+                    <textarea rows={4} value={form.additionalFields} onChange={e => setForm({ ...form, additionalFields: e.target.value })} className={INPUT} placeholder="כתבי כאן בחופשיות על ההכשרות, הכלים והמיומנויות הנוספות שאת מביאה איתך..." />
+                  </Field>
+
+                  <div className="pt-2 border-t border-[#f3e1d3]">
+                    <p className="text-sm font-bold text-[#7c533c] mb-1">קישורים שלך (לא חובה)</p>
+                    <p className="text-xs text-[#a0715c] mb-4">הקישורים שתמלאי יופיעו כאייקונים לחיצים בכרטיס הפרופיל שלך באתר.</p>
+                    <div className="space-y-4">
+                      <Field label="קישור לאינסטגרם">
+                        <input type="url" value={form.instagram} onChange={e => setForm({ ...form, instagram: e.target.value })} className={INPUT} placeholder="https://instagram.com/your_name" />
+                      </Field>
+                      <Field label="קישור לפייסבוק">
+                        <input type="url" value={form.facebook} onChange={e => setForm({ ...form, facebook: e.target.value })} className={INPUT} placeholder="https://facebook.com/your_page" />
+                      </Field>
+                      <Field label="קישור לאתר האישי שלך">
+                        <input type="url" value={form.website} onChange={e => setForm({ ...form, website: e.target.value })} className={INPUT} placeholder="https://your-website.co.il" />
+                      </Field>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">תמונת פרופיל (לא חובה — אביטל תוכל להחליף לפני הפרסום)</label>
+                    <div className="flex items-center gap-4">
+                      <Avatar src={form.image} name={form.name} className="w-16 h-16 rounded-full border border-[#f3e1d3] flex-shrink-0" />
+                      <label className="cursor-pointer text-sm bg-[#fdfaf6] border border-[#f3e1d3] px-4 py-2 rounded-xl hover:bg-white flex items-center gap-2">
+                        <Upload size={16} /> בחירת תמונה
+                        <input type="file" accept="image/*" className="hidden" onChange={e => readImage(e.target.files[0], img => setForm({ ...form, image: img }))} />
+                      </label>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-[#a0715c] bg-[#fdf8f4] border border-[#f3e1d3] p-3 rounded-xl leading-relaxed text-center">
+                    בהרשמה לאתר הינך מאשרת את הסכמתך להיכלל ברשימת יועצות ההנקה של אילת. הפרטים שתמלאי נשמרים לצורך הצגתך במאגר בלבד, ולא יועברו לגורם שלישי. להסרה בכל עת ניתן לפנות לאביטל.
+                  </p>
+
+                  <button type="submit" disabled={saving} className="w-full bg-[#e8b4b8] hover:bg-[#e2a3a8] disabled:opacity-60 text-white font-bold py-4 rounded-xl shadow-sm transition">
+                    {saving ? 'שולח…' : 'שליחת פרטים לאישור'}
+                  </button>
+                </form>
+              </div>
+            </main>
+          )}
+
+          {/* ===== פאנל ניהול ===== */}
+          {view === 'admin' && !adminUnlocked && (
+            <main className="max-w-sm mx-auto px-6 py-20">
+              <div className="bg-white rounded-3xl p-8 shadow-sm border border-[#f3e1d3] text-center">
+                <Lock size={40} className="mx-auto text-[#c0848a] mb-4" />
+                <h2 className="text-xl font-bold text-[#7c533c] mb-1">אזור ניהול</h2>
+                <p className="text-sm text-[#a0715c] mb-6">הזיני את קוד הכניסה.</p>
+                <input type="password" value={codeInput} autoFocus
+                  onChange={e => { setCodeInput(e.target.value); setCodeError(false); }}
+                  onKeyDown={e => { if (e.key === 'Enter') { codeInput === ADMIN_CODE ? setAdminUnlocked(true) : setCodeError(true); } }}
+                  className={INPUT + " text-center tracking-widest"} placeholder="• • • •" />
+                {codeError && <p className="text-sm text-[#e05a5a] mt-2">קוד שגוי, נסי שוב.</p>}
+                <button onClick={() => codeInput === ADMIN_CODE ? setAdminUnlocked(true) : setCodeError(true)}
+                  className="w-full mt-4 bg-[#e8b4b8] hover:bg-[#e2a3a8] text-white font-bold py-3 rounded-xl transition">כניסה</button>
+              </div>
+            </main>
+          )}
+
+          {view === 'admin' && adminUnlocked && (
+            <main className="max-w-4xl mx-auto px-6 py-12">
+              <div className="flex flex-wrap gap-3 justify-between items-center mb-8">
+                <div>
+                  <h2 className="text-3xl font-bold text-[#7c533c]">פאנל ניהול</h2>
+                  <p className="text-sm text-[#a0715c]">עריכה ואישור בקשות, עריכת פרטי יועצות ותמונות, וניהול האתר.</p>
+                </div>
+                <div className="bg-[#f0e4dc] text-[#7c533c] px-4 py-2 rounded-xl text-sm font-bold">
+                  בקשות הממתינות לאישור: {pending.length}
+                </div>
+              </div>
+
+              {/* בקשות ממתינות */}
+              <h3 className="text-lg font-bold text-[#7c533c] mb-4">בקשות חדשות</h3>
+              {pending.length === 0 ? (
+                <div className="bg-white rounded-3xl p-10 text-center border border-[#f3e1d3] text-[#a0715c] mb-12">
+                  <Check size={44} className="mx-auto text-[#f4a284] mb-3" />
+                  <p className="font-medium">אין בקשות חדשות כרגע.</p>
+                  <p className="text-sm mt-1">כשיועצות ירשמו בטופס, הן יופיעו כאן.</p>
+                </div>
+              ) : (
+                <div className="space-y-6 mb-12">
+                  {pending.map(p => <PendingCard key={p.id} pending={p} onApprove={approve} onReject={reject} />)}
+                </div>
+              )}
+
+              {/* יועצות מפורסמות */}
+              <h3 className="text-lg font-bold text-[#7c533c] mb-4">יועצות מפורסמות באתר ({consultants.length})</h3>
+              <div className="space-y-4">
+                {consultants.map(c => (
+                  <ConsultantRow key={c.id} consultant={c} onUpdate={updateConsultant} onRemove={removeConsultant} />
+                ))}
+              </div>
+            </main>
+          )}
+
+          <footer className="text-center py-10 border-t border-[#f3e1d3] mt-8">
+            <div className="flex justify-center mb-3"><Logo size={52} /></div>
+            <p className="font-bold text-[#7c533c] mb-3">יועצות ההנקה של אילת</p>
+            <button onClick={() => setShowPrivacy(true)} className="text-xs text-[#a0715c] underline hover:text-[#e2a3a8] mb-4">הצהרת פרטיות</button>
+            <p className="text-xs text-[#b89a8a]">נבנה באהבה על ידי <a href="https://avitaletzion.com" target="_blank" rel="noreferrer" className="text-[#c0848a] font-medium underline hover:text-[#e2a3a8]">אביטל עציון</a> 💜</p>
+          </footer>
+
+          {showPrivacy && (
+            <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-6 z-[70]" onClick={() => setShowPrivacy(false)}>
+              <div className="bg-white rounded-2xl p-6 max-w-md w-full text-right max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                <h3 className="text-xl font-bold text-[#7c533c] mb-3">הצהרת פרטיות</h3>
+                <p className="text-sm text-[#7c533c] leading-relaxed mb-3">
+                  אתר "יועצות ההנקה של אילת" הוא מאגר המרכז יועצות ומדריכות הנקה באילת ובסביבה.
+                </p>
+                <p className="text-sm text-[#7c533c] leading-relaxed mb-3">
+                  <strong>אילו פרטים נאספים?</strong> יועצת המבקשת להופיע במאגר ממלאת בעצמה את פרטיה המקצועיים (שם, תארים, אזור פעילות, טלפון, קישורים לרשתות ותמונה). הפרטים נאספים אך ורק לצורך הצגתה במאגר.
+                </p>
+                <p className="text-sm text-[#7c533c] leading-relaxed mb-3">
+                  <strong>שימוש ושיתוף:</strong> הפרטים מוצגים בדף הציבורי כדי לאפשר לאמהות ליצור קשר ישיר עם היועצת. איננו מעבירים את הפרטים לגורם שלישי ואיננו עושים בהם כל שימוש מסחרי.
+                </p>
+                <p className="text-sm text-[#7c533c] leading-relaxed mb-3">
+                  <strong>מבקרות באתר:</strong> האתר אינו אוסף מידע אישי ממבקרות ואינו משתמש בעוגיות מעקב או בכלי אנליטיקה.
+                </p>
+                <p className="text-sm text-[#7c533c] leading-relaxed mb-4">
+                  <strong>הסרה ועדכון:</strong> ניתן לבקש הסרה או עדכון של הפרטים בכל עת, בפנייה לאביטל עציון: <a className="underline text-[#c0848a]" href="mailto:avital.mpt.ibclc@gmail.com">avital.mpt.ibclc@gmail.com</a>
+                </p>
+                <button onClick={() => setShowPrivacy(false)} className="w-full bg-[#e8b4b8] hover:bg-[#e2a3a8] text-white font-bold py-3 rounded-xl">סגירה</button>
+              </div>
+            </div>
+          )}
+
+          <AccessibilityWidget />
+        </div>
+      );
+    }
+
+    /* ====== רכיבי עזר ====== */
+    const INPUT = "w-full px-4 py-3 rounded-xl border border-[#f3e1d3] bg-[#fdfaf6] focus:outline-none focus:border-[#e8b4b8]";
+    const Field = ({ label, children }) => (
+      <div>
+        <label className="block text-sm font-semibold mb-2">{label}</label>
+        {children}
+      </div>
+    );
+
+    /* כפתורי רשתות של היועצת — מוצגים בכרטיס הפרופיל בדף הבית */
+    function ConsultantSocial({ coach }) {
+      const items = [
+        [coach.instagram, Instagram, 'אינסטגרם'],
+        [coach.facebook, Facebook, 'פייסבוק'],
+        [coach.website, Globe, 'אתר אינטרנט'],
+      ].filter(([url]) => url);
+      if (!items.length) return null;
+      return (
+        <div className="flex items-center gap-2 mt-3">
+          {items.map(([url, IconC, label], i) => (
+            <a key={i} href={normalizeUrl(url)} target="_blank" rel="noreferrer" title={label} aria-label={label}
+              className="w-9 h-9 rounded-full bg-[#fdfaf6] border border-[#f3e1d3] text-[#c0848a] hover:bg-[#e8b4b8] hover:text-white hover:border-[#e8b4b8] flex items-center justify-center transition">
+              <IconC size={17} />
+            </a>
+          ))}
+        </div>
+      );
+    }
+
+    /* טופס עריכה משותף — לעריכת כל הפרטים (טקסט + תמונה) ע"י המנהלת */
+    function EditableFields({ data, set }) {
+      const channels = data.channels || {};
+      return (
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
+            <Avatar src={data.image} name={data.name} className="w-20 h-20 rounded-full border-2 border-[#e8b4b8] flex-shrink-0" />
+            <div>
+              <label className="cursor-pointer text-sm bg-[#fdfaf6] border border-[#f3e1d3] px-4 py-2 rounded-xl hover:bg-white flex items-center gap-2 w-max">
+                <Upload size={16} /> {data.image ? 'החלפת תמונה' : 'העלאת תמונה'}
+                <input type="file" accept="image/*" className="hidden" onChange={e => readImage(e.target.files[0], img => set({ image: img }))} />
+              </label>
+              {data.image && (
+                <button type="button" onClick={() => set({ image: null })} className="text-xs text-[#c0848a] hover:underline mt-2 mr-1">הסרת תמונה</button>
+              )}
+            </div>
+          </div>
+
+          <Field label="שם מלא">
+            <input className={INPUT} value={data.name || ''} onChange={e => set({ name: e.target.value })} />
+          </Field>
+          <Field label="תארים והסמכות">
+            <input className={INPUT} value={data.credentials || ''} onChange={e => set({ credentials: e.target.value })} />
+          </Field>
+          <Field label="הגישה (המשפט האישי)">
+            <textarea rows={2} className={INPUT} value={data.statement || ''} onChange={e => set({ statement: e.target.value })} />
+          </Field>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="אזור פעילות">
+              <input className={INPUT} value={data.location || ''} onChange={e => set({ location: e.target.value })} />
+            </Field>
+            <Field label="טלפון">
+              <input className={INPUT} value={data.phone || ''} onChange={e => set({ phone: e.target.value })} />
+            </Field>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold mb-2">ערוצי שירות</label>
+            <div className="grid grid-cols-2 gap-2">
+              {[['homeVisit', 'ביקורי בית'], ['clinic', 'טיפול בקליניקה'], ['weeklyClinic', 'קליניקת אמהות שבועית'], ['online', 'אונליין / מרחוק']].map(([k, l]) => (
+                <label key={k} className="flex items-center gap-2 p-2.5 border border-[#f3e1d3] rounded-lg cursor-pointer bg-[#fdfaf6] text-sm select-none">
+                  <input type="checkbox" checked={!!channels[k]} onChange={e => set({ channels: { ...channels, [k]: e.target.checked } })} className="accent-[#e8b4b8] w-4 h-4" />
+                  {l}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold mb-2">קופות חולים / טיפת חלב</label>
+            <div className="grid grid-cols-2 gap-2">
+              {HEALTH_FUNDS.map(([k, l]) => (
+                <label key={k} className="flex items-center gap-2 p-2.5 border border-[#f3e1d3] rounded-lg cursor-pointer bg-[#fdfaf6] text-sm select-none">
+                  <input type="checkbox" checked={!!channels[k]} onChange={e => set({ channels: { ...channels, [k]: e.target.checked } })} className="accent-[#e8b4b8] w-4 h-4" />
+                  {l}
+                </label>
+              ))}
+            </div>
+          </div>
+          <Field label="תחומי טיפול נוספים והתמחויות">
+            <textarea rows={3} className={INPUT} value={data.additionalFields || ''} onChange={e => set({ additionalFields: e.target.value })} />
+          </Field>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Field label="אינסטגרם">
+              <input className={INPUT} value={data.instagram || ''} onChange={e => set({ instagram: e.target.value })} placeholder="https://instagram.com/..." />
+            </Field>
+            <Field label="פייסבוק">
+              <input className={INPUT} value={data.facebook || ''} onChange={e => set({ facebook: e.target.value })} placeholder="https://facebook.com/..." />
+            </Field>
+            <Field label="אתר אישי">
+              <input className={INPUT} value={data.website || ''} onChange={e => set({ website: e.target.value })} placeholder="https://..." />
+            </Field>
+          </div>
+        </div>
+      );
+    }
+
+    /* תוסף נגישות מובנה — הגדלת טקסט, ניגודיות, הדגשת קישורים, גופן קריא */
+    function AccessibilityWidget() {
+      const [open, setOpen] = useState(false);
+      const [font, setFont] = useState(() => +(localStorage.getItem('a11y_font') || 0));
+      const [contrast, setContrast] = useState(() => localStorage.getItem('a11y_contrast') === '1');
+      const [links, setLinks] = useState(() => localStorage.getItem('a11y_links') === '1');
+      const [readable, setReadable] = useState(() => localStorage.getItem('a11y_readable') === '1');
+      const [stmt, setStmt] = useState(false);
+
+      useEffect(() => {
+        const h = document.documentElement;
+        h.classList.toggle('a11y-font-1', font === 1);
+        h.classList.toggle('a11y-font-2', font === 2);
+        h.classList.toggle('a11y-contrast', contrast);
+        h.classList.toggle('a11y-links', links);
+        h.classList.toggle('a11y-readable', readable);
+        localStorage.setItem('a11y_font', font);
+        localStorage.setItem('a11y_contrast', contrast ? '1' : '0');
+        localStorage.setItem('a11y_links', links ? '1' : '0');
+        localStorage.setItem('a11y_readable', readable ? '1' : '0');
+      }, [font, contrast, links, readable]);
+
+      const reset = () => { setFont(0); setContrast(false); setLinks(false); setReadable(false); };
+      const Toggle = ({ on, onClick, children }) => (
+        <button onClick={onClick} aria-pressed={on}
+          className={`w-full text-right px-4 py-2.5 rounded-xl border text-sm font-medium transition flex items-center justify-between ${on ? 'bg-[#e8b4b8] text-white border-[#e8b4b8]' : 'bg-[#fdfaf6] text-[#7c533c] border-[#f3e1d3] hover:bg-[#fcf1e8]'}`}>
+          <span>{children}</span><span>{on ? '✓' : ''}</span>
+        </button>
+      );
+
+      return (
+        <div className="fixed bottom-4 left-4 z-[60]">
+          {open && (
+            <div role="dialog" aria-label="תפריט נגישות" className="mb-3 w-64 bg-white rounded-2xl shadow-xl border border-[#f3e1d3] p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-bold text-[#7c533c]">נגישות</h3>
+                <button onClick={() => setOpen(false)} aria-label="סגירת תפריט נגישות" className="text-[#c0848a] text-2xl leading-none">×</button>
+              </div>
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <button onClick={() => setFont(Math.max(0, font - 1))} aria-label="הקטנת טקסט" className="flex-1 py-2 rounded-xl border border-[#f3e1d3] bg-[#fdfaf6] hover:bg-[#fcf1e8] font-bold text-[#7c533c]">א-</button>
+                  <button onClick={() => setFont(Math.min(2, font + 1))} aria-label="הגדלת טקסט" className="flex-1 py-2 rounded-xl border border-[#f3e1d3] bg-[#fdfaf6] hover:bg-[#fcf1e8] font-bold text-[#7c533c]">א+</button>
+                </div>
+                <Toggle on={contrast} onClick={() => setContrast(!contrast)}>ניגודיות גבוהה</Toggle>
+                <Toggle on={links} onClick={() => setLinks(!links)}>הדגשת קישורים</Toggle>
+                <Toggle on={readable} onClick={() => setReadable(!readable)}>גופן קריא</Toggle>
+                <button onClick={reset} className="w-full py-2 rounded-xl border border-[#f3e1d3] text-[#7c533c] hover:bg-[#fcf1e8] text-sm">איפוס</button>
+                <button onClick={() => setStmt(true)} className="w-full text-xs text-[#a0715c] underline pt-1">הצהרת נגישות</button>
+              </div>
+            </div>
+          )}
+
+          <button onClick={() => setOpen(!open)} aria-label="פתיחת תפריט נגישות"
+            className="w-14 h-14 rounded-full bg-[#e8b4b8] hover:bg-[#e2a3a8] text-white shadow-lg flex items-center justify-center border-2 border-white">
+            <Accessibility size={28} />
+          </button>
+
+          {stmt && (
+            <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-6 z-[70]" onClick={() => setStmt(false)}>
+              <div className="bg-white rounded-2xl p-6 max-w-md w-full text-right" onClick={e => e.stopPropagation()}>
+                <h3 className="text-xl font-bold text-[#7c533c] mb-3">הצהרת נגישות</h3>
+                <p className="text-sm text-[#7c533c] leading-relaxed mb-3">
+                  אנו רואים חשיבות רבה בהנגשת האתר לכלל המשתמשים. האתר כולל כלי נגישות להגדלת טקסט, ניגודיות גבוהה, הדגשת קישורים וגופן קריא, ונעשה מאמץ להתאימו לעקרונות התקן הישראלי (ת"י 5568) ברמת AA.
+                </p>
+                <p className="text-sm text-[#7c533c] leading-relaxed mb-4">
+                  נתקלת בקושי בנגישות באתר? נשמח לסייע: <a className="underline text-[#c0848a]" href="mailto:avital.mpt.ibclc@gmail.com">avital.mpt.ibclc@gmail.com</a>
+                </p>
+                <button onClick={() => setStmt(false)} className="w-full bg-[#e8b4b8] hover:bg-[#e2a3a8] text-white font-bold py-3 rounded-xl">סגירה</button>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    /* כרטיס בקשה ממתינה — המנהלת עורכת את הפרטים ואז מאשרת/דוחה */
+    function PendingCard({ pending, onApprove, onReject }) {
+      const [draft, setDraft] = useState(pending);
+      const [busy, setBusy] = useState(false);
+      const set = (patch) => setDraft(d => ({ ...d, ...patch }));
+      return (
+        <div className="bg-white rounded-3xl p-6 border-2 border-[#e8b4b8] shadow-sm">
+          <span className="bg-[#f4a284] text-white text-xs px-2.5 py-1 rounded-full font-bold inline-block mb-4">בקשה חדשה · ניתן לערוך לפני האישור</span>
+          <EditableFields data={draft} set={set} />
+          <div className="flex gap-2 mt-6">
+            <button disabled={busy} onClick={async () => { setBusy(true); await onApprove(pending.id, draft); setBusy(false); }} className="flex-1 bg-[#e8b4b8] hover:bg-[#e2a3a8] disabled:opacity-60 text-white py-3 rounded-xl font-bold text-sm transition flex items-center justify-center gap-1">
+              <Eye size={16} /> {busy ? 'מאשר…' : 'אישור ופרסום'}
+            </button>
+            <button disabled={busy} onClick={() => { if (confirm('לדחות את הבקשה?')) onReject(pending.id); }} className="px-4 border-2 border-[#f3e1d3] text-[#c0848a] rounded-xl hover:bg-white disabled:opacity-60" title="דחייה">
+              <Trash size={16} />
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    /* שורת יועצת מפורסמת — תצוגה מצומצמת + מצב עריכה מלא */
+    function ConsultantRow({ consultant, onUpdate, onRemove }) {
+      const [editing, setEditing] = useState(false);
+      const [busy, setBusy] = useState(false);
+      const [draft, setDraft] = useState(consultant);
+      const set = (patch) => setDraft(d => ({ ...d, ...patch }));
+
+      if (editing) {
+        return (
+          <div className="bg-white rounded-2xl p-5 border-2 border-[#e8b4b8] shadow-sm">
+            <EditableFields data={draft} set={set} />
+            <div className="flex gap-2 mt-5">
+              <button disabled={busy} onClick={async () => { setBusy(true); await onUpdate(consultant.id, draft); setBusy(false); setEditing(false); }} className="flex-1 bg-[#e8b4b8] hover:bg-[#e2a3a8] disabled:opacity-60 text-white py-2.5 rounded-xl font-bold text-sm transition">
+                {busy ? 'שומר…' : 'שמירת השינויים'}
+              </button>
+              <button onClick={() => { setDraft(consultant); setEditing(false); }} className="px-4 border-2 border-[#f3e1d3] text-[#7c533c] rounded-xl text-sm hover:bg-[#fcf1e8]">
+                ביטול
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="bg-white rounded-2xl p-4 border border-[#f3e1d3] flex items-center gap-3">
+          <Avatar src={consultant.image} name={consultant.name} className="w-14 h-14 rounded-full flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-[#7c533c] truncate">{consultant.name}</p>
+            <p className="text-xs text-[#a0715c] truncate">{consultant.credentials}</p>
+          </div>
+          <button onClick={() => { setDraft(consultant); setEditing(true); }} className="text-xs bg-[#fdfaf6] border border-[#f3e1d3] px-3 py-2 rounded-lg hover:bg-[#fcf1e8] flex items-center gap-1">
+            <Pencil size={14} /> עריכה
+          </button>
+          <button onClick={() => { if (confirm('להסיר את ' + consultant.name + ' מהאתר?')) onRemove(consultant.id); }} className="text-[#c0848a] hover:text-[#e05a5a] p-2 rounded-lg hover:bg-[#fcf1e8]" title="הסרה">
+            <Trash size={16} />
+          </button>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

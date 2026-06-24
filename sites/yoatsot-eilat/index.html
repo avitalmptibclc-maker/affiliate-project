@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>יועצות ההנקה של אילת — להתחלה רכה</title>
+  <title>יועצות ההנקה של אילת - להתחלה רכה</title>
   <link rel="icon" href="logo.png" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&family=Playpen+Sans+Hebrew:wght@400;500;700&display=swap" media="print" onload="this.media='all'" />
 
@@ -118,9 +118,13 @@
       reader.readAsDataURL(file);
     };
 
+    // קופות חולים / טיפת חלב שדרכן היועצת מקבלת
+    const HEALTH_FUNDS = [['clalit', 'כללית'], ['maccabi', 'מכבי'], ['leumit', 'לאומית'], ['meuhedet', 'מאוחדת'], ['tipatChalav', 'טיפת חלב']];
+
     const EMPTY_FORM = {
       name: '', credentials: '', statement: '', location: 'אילת',
       homeVisit: false, clinic: false, weeklyClinic: false, online: false,
+      clalit: false, maccabi: false, leumit: false, meuhedet: false, tipatChalav: false,
       additionalFields: '', phone: '', image: null,
       instagram: '', facebook: '', website: ''
     };
@@ -151,6 +155,14 @@
       const [loadError, setLoadError] = useState(null);
       const [saving, setSaving] = useState(false);
       const [showPrivacy, setShowPrivacy] = useState(false);
+      const [sortOrder, setSortOrder] = useState('default'); // 'default' | 'a-z' | 'z-a'
+
+      // רשימת היועצות לפי בחירת המיון
+      const sortedConsultants = [...consultants].sort((a, b) => {
+        if (sortOrder === 'a-z') return (a.name || '').localeCompare(b.name || '', 'he');
+        if (sortOrder === 'z-a') return (b.name || '').localeCompare(a.name || '', 'he');
+        return 0; // ברירת מחדל — לפי סדר ההוספה
+      });
 
       // טעינת נתונים מ-Supabase בעת כניסה לאתר
       useEffect(() => {
@@ -195,10 +207,13 @@
         if (saving) return;
         const entry = {
           ...form,
-          channels: { homeVisit: form.homeVisit, clinic: form.clinic, weeklyClinic: form.weeklyClinic, online: form.online }
+          channels: { homeVisit: form.homeVisit, clinic: form.clinic, weeklyClinic: form.weeklyClinic, online: form.online, clalit: form.clalit, maccabi: form.maccabi, leumit: form.leumit, meuhedet: form.meuhedet, tipatChalav: form.tipatChalav }
         };
         setSaving(true);
         try {
+          if (!window.supabase || !sb || typeof sb.from !== 'function') {
+            throw new Error('ספריית החיבור לשרת (Supabase) לא נטענה. ייתכן שתוסף חוסם בדפדפן או חיבור אינטרנט חלש.');
+          }
           const { data, error } = await sb.from('pending_consultants').insert(toDb(entry)).select().single();
           if (error) throw error;
           setPending(prev => [...prev, fromDb(data)]);
@@ -216,7 +231,7 @@
       // אישור בקשה — מקבל את הפרטים אחרי שהמנהלת ערכה אותם
       const approve = async (id, data) => {
         try {
-          const { data: inserted, error } = await sb.from('consultants').insert(toDb(data)).select().single();
+          const { data: inserted, error } = await sb.from('consultants').insert({ ...toDb(data), status: 'approved' }).select().single();
           if (error) throw error;
           const { error: delErr } = await sb.from('pending_consultants').delete().eq('id', id);
           if (delErr) throw delErr;
@@ -279,7 +294,7 @@
             </div>
             <div className="flex gap-1 sm:gap-3 items-center flex-shrink-0">
               {navBtn('home', 'דף הבית')}
-              {navBtn('register', 'הצטרפות')}
+              {navBtn('register', 'הצטרפות לרשימה')}
               <button onClick={goAdmin} className={`p-2 rounded-full transition flex items-center gap-1 text-sm flex-shrink-0 ${view === 'admin' ? 'bg-[#e8b4b8] text-white' : 'text-[#c0848a] hover:bg-[#fcf1e8]'}`}>
                 <Shield size={18} /> <span className="hidden sm:inline">ניהול</span>
               </button>
@@ -301,7 +316,7 @@
                 <div className="flex justify-center -mb-8"><Logo size={300} /></div>
                 <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#7c533c] mb-4">יש מלא יועצות הנקה באילת!</h1>
                 <p className="text-xl sm:text-2xl text-[#a0715c] max-w-2xl mx-auto font-light leading-relaxed">
-                  בחרי את יועצת ההנקה שמתאימה לך —<br />ליווי רך, מקצועי וקרוב,<br />כבר מהרגע הראשון.
+                  בחרי את יועצת ההנקה שמתאימה לך -<br />ליווי רך, מקצועי וקרוב,<br />כבר מהרגע הראשון.
                 </p>
               </header>
 
@@ -317,8 +332,21 @@
                 {!loading && consultants.length === 0 && (
                   <p className="text-center text-[#a0715c]">עדיין אין יועצות מאושרות באתר.</p>
                 )}
+
+                {consultants.length > 1 && (
+                  <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
+                    <span className="text-sm font-medium text-[#a0715c] ml-1">סדר לפי:</span>
+                    {[['default', 'ברירת מחדל'], ['a-z', 'א-ת'], ['z-a', 'ת-א']].map(([key, label]) => (
+                      <button key={key} onClick={() => setSortOrder(key)}
+                        className={`px-4 py-2 rounded-full text-sm transition ${sortOrder === key ? 'bg-[#e8b4b8] text-white font-medium' : 'bg-[#f0e4dc] text-[#7c533c] hover:bg-[#e7d6c9]'}`}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {consultants.map((coach) => (
+                  {sortedConsultants.map((coach) => (
                     <div key={coach.id} className="bg-white rounded-3xl p-6 shadow-sm border border-[#f3e1d3] transition-all hover:shadow-md flex flex-col justify-between">
                       <div>
                         <div className="flex items-start gap-4 mb-2">
@@ -344,6 +372,9 @@
                           {coach.channels.clinic && <span className="bg-[#f0e4dc] text-[#7c533c] text-sm px-3 py-1 rounded-full font-medium">✓ טיפול בקליניקה</span>}
                           {coach.channels.weeklyClinic && <span className="bg-[#f0e4dc] text-[#7c533c] text-sm px-3 py-1 rounded-full font-medium">✓ קליניקת אמהות שבועית</span>}
                           {coach.channels.online && <span className="bg-[#f0e4dc] text-[#7c533c] text-sm px-3 py-1 rounded-full font-medium">✓ אונליין</span>}
+                          {HEALTH_FUNDS.map(([k, l]) => coach.channels[k] && (
+                            <span key={k} className="bg-[#fbe6e0] text-[#b56b5a] text-sm px-3 py-1 rounded-full font-medium">{k === 'tipatChalav' ? '🍼 טיפת חלב' : 'קופ״ח ' + l}</span>
+                          ))}
                         </div>
 
                         {coach.additionalFields && (
@@ -430,6 +461,18 @@
                     <label className="block text-sm font-semibold mb-3">איך ניתן לקבל אצלך שירות? (סמני את כל האפשרויות)</label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {[['homeVisit', 'ביקורי בית'], ['clinic', 'טיפול בקליניקה'], ['weeklyClinic', 'קליניקת אמהות שבועית'], ['online', 'אונליין / מרחוק']].map(([key, label]) => (
+                        <label key={key} className="flex items-center gap-3 p-3 border border-[#f3e1d3] rounded-xl cursor-pointer bg-[#fdfaf6] hover:bg-white select-none">
+                          <input type="checkbox" checked={form[key]} onChange={e => setForm({ ...form, [key]: e.target.checked })} className="accent-[#e8b4b8] w-4 h-4" />
+                          <span className="text-sm font-medium">{label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold mb-3">מקבלת דרך קופת חולים / טיפת חלב? (סמני את כל המתאים)</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {HEALTH_FUNDS.map(([key, label]) => (
                         <label key={key} className="flex items-center gap-3 p-3 border border-[#f3e1d3] rounded-xl cursor-pointer bg-[#fdfaf6] hover:bg-white select-none">
                           <input type="checkbox" checked={form[key]} onChange={e => setForm({ ...form, [key]: e.target.checked })} className="accent-[#e8b4b8] w-4 h-4" />
                           <span className="text-sm font-medium">{label}</span>
@@ -639,6 +682,17 @@
             <label className="block text-sm font-semibold mb-2">ערוצי שירות</label>
             <div className="grid grid-cols-2 gap-2">
               {[['homeVisit', 'ביקורי בית'], ['clinic', 'טיפול בקליניקה'], ['weeklyClinic', 'קליניקת אמהות שבועית'], ['online', 'אונליין / מרחוק']].map(([k, l]) => (
+                <label key={k} className="flex items-center gap-2 p-2.5 border border-[#f3e1d3] rounded-lg cursor-pointer bg-[#fdfaf6] text-sm select-none">
+                  <input type="checkbox" checked={!!channels[k]} onChange={e => set({ channels: { ...channels, [k]: e.target.checked } })} className="accent-[#e8b4b8] w-4 h-4" />
+                  {l}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold mb-2">קופות חולים / טיפת חלב</label>
+            <div className="grid grid-cols-2 gap-2">
+              {HEALTH_FUNDS.map(([k, l]) => (
                 <label key={k} className="flex items-center gap-2 p-2.5 border border-[#f3e1d3] rounded-lg cursor-pointer bg-[#fdfaf6] text-sm select-none">
                   <input type="checkbox" checked={!!channels[k]} onChange={e => set({ channels: { ...channels, [k]: e.target.checked } })} className="accent-[#e8b4b8] w-4 h-4" />
                   {l}
