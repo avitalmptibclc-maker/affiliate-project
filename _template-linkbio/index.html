@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ההמלצות שלי</title>
+  <link rel="icon" href="https://fav.farm/🤍" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playpen+Sans+Hebrew:wght@400;500;600;700;800&family=Varela+Round&display=swap" />
+
+  <!-- ספריות מ-CDN (קובץ עצמאי שעובד בכל מקום) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    html, body {
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+    body {
+      font-family: 'Varela Round', 'Heebo', Arial, sans-serif;
+      background: radial-gradient(125% 80% at 50% 0%, #FBEAE3 0%, #FBF6F1 42%, #F5ECE5 100%);
+      min-height: 100vh;
+    }
+    * { box-sizing: border-box; }
+    .font-display { font-family: 'Playpen Sans Hebrew', 'Varela Round', cursive; }
+    .gold-text { background: linear-gradient(90deg,#B98A63,#E3BC92,#B98A63); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .glam-card { box-shadow: 0 10px 30px -12px rgba(124,83,60,.18); }
+    .drawer-body { transition: max-height .4s ease, opacity .3s ease; overflow: hidden; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" data-presets="react">
+    const { useState, useEffect } = React;
+
+    /* ============================================================
+       ⚙️  הגדרות — זה כל מה שצריך לשנות כדי לשכפל ללקוח/ה חדש/ה
+       ============================================================
+       1. SITE_PREFIX  — קידומת ייחודית באנגלית (קובעת את שם הטבלה ב-Supabase).
+       2. ADMIN_CODE   — סיסמת הניהול של הלקוח/ה.
+       3. BRAND_NAME / HERO_TITLE / HERO_INTRO — הטקסטים בראש הדף.
+       4. SUPABASE_URL / SUPABASE_ANON_KEY — מתוך פרויקט ה-Supabase
+          (פרויקט נפרד לכל לקוח/ה = הכי נקי, או פרויקט משותף עם קידומת שונה).
+       כל השאר (תמונת פרופיל, רקע, שמות המגירות, ההסברים, האייקונים והמוצרים)
+       נערך ע"י הלקוח/ה מתוך פאנל הניהול — בלי לגעת בקוד.
+       ============================================================ */
+    const SITE_PREFIX = "CHANGE_ME";        // אותיות אנגליות בלבד, בלי רווחים
+    const ADMIN_CODE  = "0000";             // שני לסיסמת הניהול של הלקוח/ה
+    const BRAND_NAME  = "השם שלי";          // מופיע בכותרת לשונית הדפדפן
+    const HERO_TITLE  = "היוששש מהממת!";     // הכותרת הגדולה בראש הדף
+    const HERO_INTRO  = "כאן כותבים משפט פתיחה קצר — מי את ומה אספת בשביל הקהל שלך.";
+
+    const TABLE = `${SITE_PREFIX}_products`;
+
+    /* ====== חיבור ל-Supabase (החליפי בפרטים של הפרויקט של הלקוח/ה) ====== */
+    const SUPABASE_URL = "https://YOUR_PROJECT.supabase.co";
+    const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    /* ====== ארבע המגירות — שמות ברירת מחדל (הלקוח/ה משנה אותם בניהול) ====== */
+    const CATEGORIES = [
+      { key: 'cat1', label: 'נושא ראשון',  emoji: '💗', color: '#AA8A94', soft: '#F1E7EA' },
+      { key: 'cat2', label: 'נושא שני',    emoji: '🤰', color: '#ED8888', soft: '#FBE6E6' },
+      { key: 'cat3', label: 'נושא שלישי',  emoji: '🤱', color: '#C59976', soft: '#F1E6DA' },
+      { key: 'cat4', label: 'נושא רביעי',  emoji: '🧸', color: '#7FB0B0', soft: '#DCEDED' },
+    ];
+    const catOf = (key) => CATEGORIES.find(c => c.key === key) || CATEGORIES[0];
+
+    /* ====== אייקונים ====== */
+    const Icon = ({ children, size = 20, className }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+        fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
+    );
+    const Chevron = (p) => <Icon {...p}><polyline points="6 9 12 15 18 9" /></Icon>;
+    const ExternalLink = (p) => <Icon {...p}><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></Icon>;
+    const Lock = (p) => <Icon {...p}><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></Icon>;
+    const Trash = (p) => <Icon {...p}><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></Icon>;
+    const Pencil = (p) => <Icon {...p}><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></Icon>;
+    const Plus = (p) => <Icon {...p}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon>;
+    const Back = (p) => <Icon {...p}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 19 19 12 12 5" /></Icon>;
+    const Upload = (p) => <Icon {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></Icon>;
+
+    /* ====== ספריית אייקונים לבחירה (קו עדין) ====== */
+    const ICON_LIBRARY = {
+      heart:    (p) => <Icon {...p}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.49 4.04 3 5.5l7 7Z" /></Icon>,
+      baby:     (p) => <Icon {...p}><circle cx="12" cy="12" r="9" /><path d="M9 14c.83.67 1.83 1 3 1s2.17-.33 3-1" /><path d="M9 10h.01" /><path d="M15 10h.01" /></Icon>,
+      droplet:  (p) => <Icon {...p}><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z" /></Icon>,
+      star:     (p) => <Icon {...p}><polygon points="12 2 15 9 22 9.5 17 14 18.5 21 12 17 5.5 21 7 14 2 9.5 9 9" /></Icon>,
+      sparkles: (p) => <Icon {...p}><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z" /></Icon>,
+      sun:      (p) => <Icon {...p}><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4" /></Icon>,
+      moon:     (p) => <Icon {...p}><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></Icon>,
+      flower:   (p) => <Icon {...p}><circle cx="12" cy="12" r="2.5" /><circle cx="12" cy="6.5" r="2.5" /><circle cx="12" cy="17.5" r="2.5" /><circle cx="6.5" cy="12" r="2.5" /><circle cx="17.5" cy="12" r="2.5" /></Icon>,
+      leaf:     (p) => <Icon {...p}><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" /><path d="M2 21c0-3 1.85-5.36 5.08-6" /></Icon>,
+      gift:     (p) => <Icon {...p}><rect x="3" y="8" width="18" height="4" rx="1" /><path d="M12 8v13" /><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7" /><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8" /><path d="M16.5 8a2.5 2.5 0 0 0 0-5C13 3 12 8 12 8" /></Icon>,
+      smile:    (p) => <Icon {...p}><circle cx="12" cy="12" r="10" /><path d="M8 14s1.5 2 4 2 4-2 4-2" /><path d="M9 9h.01" /><path d="M15 9h.01" /></Icon>,
+      crown:    (p) => <Icon {...p}><path d="M2 7l5 5 5-7 5 7 5-5-2.2 12H4.2z" /></Icon>,
+      bell:     (p) => <Icon {...p}><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></Icon>,
+      flame:    (p) => <Icon {...p}><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z" /></Icon>,
+      award:    (p) => <Icon {...p}><circle cx="12" cy="8" r="6" /><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" /></Icon>,
+      feather:  (p) => <Icon {...p}><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z" /><path d="M16 8 2 22" /><path d="M17.5 15H9" /></Icon>,
+    };
+    const DEFAULT_ICONS = { cat1: 'heart', cat2: 'star', cat3: 'droplet', cat4: 'smile' };
+
+    /* הגדרות שניתנות לעריכה דרך הניהול: אייקונים, שמות מגירות והסברים */
+    const DEFAULT_SETTINGS = {
+      icons: DEFAULT_ICONS,
+      labels: Object.fromEntries(CATEGORIES.map(c => [c.key, c.label])),
+      descs: Object.fromEntries(CATEGORIES.map(c => [c.key, ''])),
+      bg: '',
+    };
+    const mergeSettings = (b, o = {}) => ({
+      icons:  { ...b.icons,  ...(o.icons  || {}) },
+      labels: { ...b.labels, ...(o.labels || {}) },
+      descs:  { ...b.descs,  ...(o.descs  || {}) },
+      bg: o.bg !== undefined ? o.bg : b.bg,
+    });
+
+    const CatIconCtx = React.createContext({});
+    const CatIcon = ({ k, size = 22, color }) => {
+      const choices = React.useContext(CatIconCtx);
+      const name = (choices && choices[k]) || DEFAULT_ICONS[k] || 'heart';
+      const C = ICON_LIBRARY[name] || ICON_LIBRARY.heart;
+      return <span style={{ color, display: 'inline-flex' }}><C size={size} /></span>;
+    };
+
+    /* ====== המרת נתונים ====== */
+    const fromDb = (r) => ({ id: r.id, category: r.category, title: r.title || '', description: r.description || '', url: r.url || '', image: r.image || '' });
+    const toDb   = (p) => ({ category: p.category, title: p.title || '', description: p.description || '', url: p.url || '', image: p.image || null });
+
+    /* ====== תמונת פרופיל של אביטל ======
+       משתמשת בתמונה שהועלתה מהניהול (src). אם אין — מציגה עיגול עם האות א. */
+    const ProfilePic = ({ size = 120, src }) => {
+      if (src) return <img src={src} style={{ width: size, height: size }}
+        className="mx-auto rounded-full object-cover shadow-md border-4 border-white" alt="אביטל עציון" />;
+      return (
+        <div style={{ width: size, height: size }} className="mx-auto rounded-full bg-gradient-to-tr from-[#ED8888] to-[#C59976] flex items-center justify-center text-white text-4xl font-extrabold shadow-md">א</div>
+      );
+    };
+
+    /* ====== הקטנת תמונה לפני שמירה (כדי לא לשמור קובץ ענק) ====== */
+    const resizeImage = (file, cb, max = 512) => {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const scale = Math.min(1, max / Math.max(img.width, img.height));
+          const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          cb(canvas.toDataURL('image/jpeg', 0.85));
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    };
+
+    const INPUT = "w-full px-4 py-3 rounded-xl border border-[#e7d8cd] bg-white focus:outline-none focus:ring-2 focus:ring-[#ED8888] text-[#263238]";
+    const EMPTY = { category: 'cat1', title: '', description: '', url: '', image: '' };
+
+    /* ====== כרטיס מוצר (תצוגה ציבורית) ====== */
+    const ProductCard = ({ p }) => {
+      const c = catOf(p.category);
+      return (
+        <a href={p.url} target="_blank" rel="sponsored noopener noreferrer"
+          className="group flex items-center gap-3 sm:gap-4 bg-white rounded-2xl p-3 shadow-sm border border-[#f0e3d8] active:scale-[.99] hover:shadow-md hover:-translate-y-0.5 transition-all">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex-shrink-0 flex items-center justify-center text-3xl overflow-hidden border border-[#f0e3d8]"
+            style={{ background: '#fff' }}>
+            {p.image ? <img src={p.image} alt={p.title} loading="lazy" className="w-full h-full object-cover" /> : <CatIcon k={c.key} size={30} color={c.color} />}
+          </div>
+          <div className="min-w-0 flex-1">
+            <h4 className="font-bold text-[#263238] leading-tight break-words">{p.title}</h4>
+            {p.description && <p className="text-xs sm:text-sm text-[#7a6b66] mt-1 leading-snug break-words line-clamp-3">{p.description}</p>}
+            <span className="inline-flex items-center gap-1 mt-2 text-xs font-semibold" style={{ color: c.color }}>לצפייה ורכישה <ExternalLink size={13} /></span>
+          </div>
+          <div className="flex-shrink-0 text-white rounded-full p-2 self-center group-hover:scale-110 transition" style={{ background: c.color }}>
+            <ExternalLink size={18} />
+          </div>
+        </a>
+      );
+    };
+
+    /* ====== מגירה (אקורדיון) ====== */
+    const Drawer = ({ cat, desc, products, open, onToggle }) => (
+      <div className="rounded-3xl overflow-hidden glam-card border border-[#f3e7dd] bg-white">
+        <button onClick={onToggle} className="w-full flex items-center gap-3 p-5 text-right transition"
+          style={{ background: open ? cat.soft : '#ffffff' }}>
+          <span className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ring-1 ring-white/60" style={{ background: cat.soft }}><CatIcon k={cat.key} size={24} color={cat.color} /></span>
+          <span className="flex-1 font-display text-lg sm:text-xl font-normal text-[#263238]">{cat.label}</span>
+          <span className="text-xs text-white rounded-full px-2.5 py-1 font-semibold shadow-sm" style={{ background: cat.color }}>{products.length}</span>
+          <Chevron size={22} className={"text-[#a08e88] transition-transform " + (open ? "rotate-180" : "")} />
+        </button>
+        <div className="drawer-body" style={{ maxHeight: open ? '4000px' : '0', opacity: open ? 1 : 0 }}>
+          <div className="p-4 pt-1 space-y-3" style={{ background: cat.soft + '55' }}>
+            {desc && <p className="text-sm text-[#7a6b66] bg-white/70 rounded-2xl p-3.5 leading-relaxed">{desc}</p>}
+            {products.length === 0
+              ? <p className="text-center text-[#a08e88] py-4 text-sm">עדיין אין כאן מוצרים 🤍</p>
+              : products.map(p => <ProductCard key={p.id} p={p} />)}
+          </div>
+        </div>
+      </div>
+    );
+
+    /* ====== ממשק ניהול ====== */
+    const Admin = ({ products, profileImg, onSaveProfile, settings, onSaveSettings, onAdd, onUpdate, onDelete, onExit }) => {
+      const [form, setForm] = useState(EMPTY);
+      const [editId, setEditId] = useState(null);
+      const [saving, setSaving] = useState(false);
+      const [err, setErr] = useState('');
+      const [profSaving, setProfSaving] = useState(false);
+      const [labels, setLabels] = useState(settings.labels);
+      const [descs, setDescs] = useState(settings.descs);
+
+      const changeProfile = (file) => {
+        if (!file) return;
+        setProfSaving(true);
+        resizeImage(file, async (dataUrl) => {
+          try { await onSaveProfile(dataUrl); }
+          catch (e) { alert('שגיאה בשמירת התמונה: ' + (e.message || e)); }
+          finally { setProfSaving(false); }
+        });
+      };
+
+      const [bgSaving, setBgSaving] = useState(false);
+      const changeBg = (file) => {
+        if (!file) return;
+        setBgSaving(true);
+        resizeImage(file, async (dataUrl) => {
+          try { await onSaveSettings({ bg: dataUrl }); }
+          catch (e) { alert('שגיאה בשמירת הרקע: ' + (e.message || e)); }
+          finally { setBgSaving(false); }
+        }, 1080);
+      };
+
+      const [imgLoading, setImgLoading] = useState(false);
+
+      // משיכה אוטומטית של תמונת המוצר מתוך הקישור
+      const autoFetchImage = async (url) => {
+        const u = (url || '').trim();
+        if (!/^https?:\/\//i.test(u)) return;
+        setImgLoading(true);
+        try {
+          let img = '';
+          try {
+            const r = await fetch('https://api.microlink.io/?url=' + encodeURIComponent(u));
+            const j = await r.json();
+            img = (j && j.data && ((j.data.image && j.data.image.url) || (j.data.logo && j.data.logo.url))) || '';
+          } catch (e) {}
+          if (!img) {
+            const r2 = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(u));
+            const html = await r2.text();
+            const m = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
+                   || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
+            if (m) img = m[1];
+          }
+          if (img) setForm(f => ({ ...f, image: img }));
+        } catch (e) { /* בשקט — תמיד אפשר להוסיף תמונה ידנית */ }
+        finally { setImgLoading(false); }
+      };
+
+      const startEdit = (p) => { setEditId(p.id); setForm({ ...p }); setErr(''); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+      const reset = () => { setEditId(null); setForm(EMPTY); setErr(''); };
+
+      const submit = async (e) => {
+        e.preventDefault();
+        if (!form.title.trim() || !form.url.trim()) { setErr('צריך לפחות שם מוצר וקישור.'); return; }
+        setSaving(true); setErr('');
+        try {
+          if (editId) await onUpdate(editId, form);
+          else        await onAdd(form);
+          reset();
+        } catch (e) { setErr('שגיאה בשמירה: ' + (e.message || e)); }
+        finally { setSaving(false); }
+      };
+
+      const pickImage = (file) => {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => setForm(f => ({ ...f, image: ev.target.result }));
+        reader.readAsDataURL(file);
+      };
+
+      return (
+        <div className="max-w-2xl mx-auto px-4 py-8">
+          <button onClick={onExit} className="flex items-center gap-1 text-[#a08e88] hover:text-[#263238] mb-4 text-sm">
+            <Back size={16} /> חזרה לדף
+          </button>
+          <h2 className="text-2xl font-extrabold text-[#263238] mb-1">ממשק ניהול</h2>
+          <p className="text-[#7a6b66] mb-6 text-sm">הוספה ועריכה של מוצרים. השינויים נשמרים מיד ומופיעים לכולם.</p>
+
+          {/* תמונת פרופיל */}
+          <div className="bg-white rounded-3xl p-5 shadow-sm border border-[#f0e3d8] mb-6">
+            <h3 className="font-bold text-[#263238] mb-3">תמונת הפרופיל שלך</h3>
+            <div className="flex items-center gap-4">
+              <ProfilePic size={72} src={profileImg} />
+              <div className="flex-1">
+                <label className="inline-flex items-center gap-2 cursor-pointer bg-[#ED8888] hover:bg-[#e07373] text-white text-sm font-semibold px-4 py-2.5 rounded-xl">
+                  <Upload size={16} /> {profSaving ? 'מעלה...' : (profileImg ? 'החלפת תמונה' : 'העלאת תמונה')}
+                  <input type="file" accept="image/*" className="hidden" disabled={profSaving} onChange={e => changeProfile(e.target.files[0])} />
+                </label>
+                <p className="text-xs text-[#a08e88] mt-2">התמונה נשמרת מיד ומופיעה לכל מי שנכנס לדף.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* רקע הדף */}
+          <div className="bg-white rounded-3xl p-5 shadow-sm border border-[#f0e3d8] mb-6">
+            <h3 className="font-bold text-[#263238] mb-3">רקע הדף</h3>
+            <div className="flex items-center gap-4">
+              <div className="w-20 h-14 rounded-xl border border-[#e7d8cd] overflow-hidden flex-shrink-0 bg-[#FBF6F1] flex items-center justify-center"
+                style={settings.bg ? { backgroundImage: `url(${settings.bg})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}>
+                {!settings.bg && <span className="text-[10px] text-[#a08e88]">ברירת מחדל</span>}
+              </div>
+              <div className="flex-1">
+                <label className="inline-flex items-center gap-2 cursor-pointer bg-[#C59976] hover:bg-[#b3865f] text-white text-sm font-semibold px-4 py-2.5 rounded-xl">
+                  <Upload size={16} /> {bgSaving ? 'מעלה...' : (settings.bg ? 'החלפת רקע' : 'העלאת רקע')}
+                  <input type="file" accept="image/*" className="hidden" disabled={bgSaving} onChange={e => changeBg(e.target.files[0])} />
+                </label>
+                {settings.bg && <button type="button" onClick={() => onSaveSettings({ bg: '' })} className="text-xs text-[#c0848a] hover:underline mr-3">הסרה (חזרה לברירת מחדל)</button>}
+                <p className="text-xs text-[#a08e88] mt-2">מומלץ תמונה לאורך ובהירה. נדחסת אוטומטית לטעינה מהירה.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* עריכת המגירות: שם, הסבר ואייקון */}
+          <div className="bg-white rounded-3xl p-5 glam-card border border-[#f0e3d8] mb-6">
+            <h3 className="font-bold text-[#263238] mb-1">המגירות (נושאי הקישורים)</h3>
+            <p className="text-xs text-[#a08e88] mb-4">ערכי את שם המגירה, הוסיפי הסבר קצר, ובחרי אייקון. השינויים נשמרים אוטומטית.</p>
+            <div className="space-y-5">
+              {CATEGORIES.map(c => {
+                const current = (settings.icons && settings.icons[c.key]) || DEFAULT_ICONS[c.key];
+                return (
+                  <div key={c.key} className="rounded-2xl border border-[#f3e7dd] p-3" style={{ background: c.soft + '40' }}>
+                    <input
+                      value={labels[c.key]}
+                      onChange={e => setLabels(prev => ({ ...prev, [c.key]: e.target.value }))}
+                      onBlur={() => onSaveSettings({ labels })}
+                      className="w-full bg-white rounded-lg px-3 py-2 font-semibold border border-[#e7d8cd] focus:outline-none focus:ring-2 focus:ring-[#ED8888]"
+                      style={{ color: c.color }} placeholder="שם המגירה" />
+                    <textarea rows={2}
+                      value={descs[c.key]}
+                      onChange={e => setDescs(prev => ({ ...prev, [c.key]: e.target.value }))}
+                      onBlur={() => onSaveSettings({ descs })}
+                      className="w-full mt-2 bg-white rounded-lg px-3 py-2 text-sm border border-[#e7d8cd] focus:outline-none focus:ring-2 focus:ring-[#ED8888]"
+                      placeholder="הסבר קצר על מה שיש במגירה הזו (יופיע מתחת לכותרת המגירה)" />
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {Object.keys(ICON_LIBRARY).map(name => {
+                        const Ico = ICON_LIBRARY[name];
+                        const sel = current === name;
+                        return (
+                          <button key={name} type="button" title={name}
+                            onClick={() => onSaveSettings({ icons: { ...settings.icons, [c.key]: name } })}
+                            className={"w-9 h-9 rounded-lg flex items-center justify-center border transition " + (sel ? "text-white border-transparent shadow-sm" : "bg-white text-[#7a6b66] border-[#e7d8cd] hover:bg-[#fdf3ee]")}
+                            style={sel ? { background: c.color } : {}}>
+                            <Ico size={16} />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* טופס הוספה / עריכה */}
+          <form onSubmit={submit} className="bg-white rounded-3xl p-5 shadow-sm border border-[#f0e3d8] space-y-4 mb-8">
+            <h3 className="font-bold text-[#263238]">{editId ? 'עריכת מוצר' : 'הוספת מוצר חדש'}</h3>
+            <div>
+              <label className="block text-sm font-semibold mb-1 text-[#263238]">מגירה</label>
+              <div className="grid grid-cols-2 gap-2">
+                {CATEGORIES.map(c => (
+                  <button type="button" key={c.key} onClick={() => setForm(f => ({ ...f, category: c.key }))}
+                    className={"flex items-center gap-2 p-2.5 rounded-xl border text-sm font-medium transition " + (form.category === c.key ? "text-white border-transparent" : "bg-white text-[#263238] border-[#e7d8cd]")}
+                    style={form.category === c.key ? { background: c.color } : {}}>
+                    <CatIcon k={c.key} size={16} color={form.category === c.key ? '#fff' : c.color} /> {c.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-1 text-[#263238]">שם המוצר *</label>
+              <input className={INPUT} value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="למשל: כרית הנקה" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-1 text-[#263238]">קישור (לינק האפיליאייט) *</label>
+              <input className={INPUT} dir="ltr" value={form.url}
+                onChange={e => setForm(f => ({ ...f, url: e.target.value }))}
+                onBlur={e => { if (!form.image) autoFetchImage(e.target.value); }}
+                placeholder="https://..." />
+              <p className="text-xs text-[#a08e88] mt-1">📷 תמונת המוצר תיטען אוטומטית מהקישור</p>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-1 text-[#263238]">תיאור קצר (לא חובה)</label>
+              <input className={INPUT} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="משפט קצר על המוצר" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-1 text-[#263238]">תמונה (נטענת אוטומטית — אפשר גם להחליף)</label>
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-xl border border-[#e7d8cd] flex items-center justify-center overflow-hidden bg-[#FBF6F1] flex-shrink-0">
+                  {imgLoading ? <span className="text-[10px] text-[#a08e88] animate-pulse">טוען…</span> : (form.image ? <img src={form.image} className="w-full h-full object-cover" /> : <CatIcon k={form.category} size={22} color={catOf(form.category).color} />)}
+                </div>
+                <button type="button" onClick={() => autoFetchImage(form.url)} disabled={imgLoading || !form.url}
+                  className="text-xs bg-[#f0e4dc] text-[#7c533c] px-3 py-2 rounded-lg disabled:opacity-50">טעינה מהקישור</button>
+                <input type="file" accept="image/*" onChange={e => pickImage(e.target.files[0])} className="text-sm flex-1 min-w-0" />
+                {form.image && <button type="button" onClick={() => setForm(f => ({ ...f, image: '' }))} className="text-xs text-[#c0848a] hover:underline">הסרה</button>}
+              </div>
+              <input className={INPUT + " mt-2 text-sm"} dir="ltr" value={form.image && !form.image.startsWith('data:') ? form.image : ''} onChange={e => setForm(f => ({ ...f, image: e.target.value }))} placeholder="או הדביקי כתובת תמונה https://..." />
+            </div>
+            {err && <p className="text-sm text-red-600">{err}</p>}
+            <div className="flex gap-2">
+              <button type="submit" disabled={saving} className="flex-1 bg-[#ED8888] hover:bg-[#e07373] text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 disabled:opacity-60">
+                <Plus size={18} /> {saving ? 'שומר...' : (editId ? 'שמירת שינויים' : 'הוספת מוצר')}
+              </button>
+              {editId && <button type="button" onClick={reset} className="px-4 py-3 rounded-xl border border-[#e7d8cd] text-[#7a6b66]">ביטול</button>}
+            </div>
+          </form>
+
+          {/* רשימת המוצרים הקיימים */}
+          <h3 className="font-bold text-[#263238] mb-3">המוצרים שלי ({products.length})</h3>
+          <div className="space-y-5">
+            {CATEGORIES.map(c => {
+              const list = products.filter(p => p.category === c.key);
+              return (
+                <div key={c.key}>
+                  <div className="flex items-center gap-2 mb-2 text-sm font-bold" style={{ color: c.color }}><CatIcon k={c.key} size={15} color={c.color} /> {c.label} ({list.length})</div>
+                  <div className="space-y-2">
+                    {list.length === 0 && <p className="text-xs text-[#a08e88] pr-6">אין מוצרים במגירה הזו.</p>}
+                    {list.map(p => (
+                      <div key={p.id} className="flex items-center gap-3 bg-white rounded-xl p-3 border border-[#f0e3d8]">
+                        <div className="w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden text-lg" style={{ background: c.soft }}>
+                          {p.image ? <img src={p.image} className="w-full h-full object-cover" /> : <CatIcon k={c.key} size={18} color={c.color} />}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-[#263238] text-sm truncate">{p.title}</div>
+                          <div className="text-xs text-[#a08e88] truncate" dir="ltr">{p.url}</div>
+                        </div>
+                        <button onClick={() => startEdit(p)} className="p-2 text-[#7a6b66] hover:text-[#263238]"><Pencil size={16} /></button>
+                        <button onClick={() => { if (confirm('למחוק את "' + p.title + '"?')) onDelete(p.id); }} className="p-2 text-[#c0848a] hover:text-red-600"><Trash size={16} /></button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    };
+
+    /* ====== האפליקציה ====== */
+    function App() {
+      const [products, setProducts] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [loadError, setLoadError] = useState(null);
+      const [openKey, setOpenKey] = useState('cat1');
+      const [admin, setAdmin] = useState(false);
+      const [profileImg, setProfileImg] = useState('');
+      const [metaId, setMetaId] = useState(null);
+      const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+
+      const load = async () => {
+        setLoading(true); setLoadError(null);
+        try {
+          const { data, error } = await sb.from(TABLE).select('*').order('sort_order', { ascending: true }).order('id', { ascending: true });
+          if (error) throw error;
+          const rows = (data || []).map(fromDb);
+          const meta = rows.find(r => r.category === '_meta');
+          if (meta) {
+            setProfileImg(meta.image || '');
+            setMetaId(meta.id);
+            if (meta.description) {
+              try {
+                const parsed = JSON.parse(meta.description);
+                // תאימות לאחור: אם נשמר רק מילון אייקונים שטוח
+                const obj = (parsed.icons || parsed.labels || parsed.descs) ? parsed : { icons: parsed };
+                setSettings(mergeSettings(DEFAULT_SETTINGS, obj));
+              } catch (e) {}
+            }
+          }
+          setProducts(rows.filter(r => CATEGORIES.some(c => c.key === r.category)));
+        } catch (e) {
+          console.error(e);
+          setLoadError('שגיאה בטעינת המוצרים. רענני את הדף ונסי שוב.');
+        } finally { setLoading(false); }
+      };
+      useEffect(() => { load(); document.title = BRAND_NAME + ' — ההמלצות שלי'; }, []);
+
+      const add = async (p) => {
+        const { data, error } = await sb.from(TABLE).insert(toDb(p)).select().single();
+        if (error) throw error;
+        setProducts(prev => [...prev, fromDb(data)]);
+      };
+      const update = async (id, p) => {
+        const { data, error } = await sb.from(TABLE).update(toDb(p)).eq('id', id).select().single();
+        if (error) throw error;
+        setProducts(prev => prev.map(x => x.id === id ? fromDb(data) : x));
+      };
+      const remove = async (id) => {
+        const { error } = await sb.from(TABLE).delete().eq('id', id);
+        if (error) { alert('שגיאה במחיקה'); return; }
+        setProducts(prev => prev.filter(x => x.id !== id));
+      };
+
+      // עדכון שורת ההגדרות המיוחדת _meta (תמונת פרופיל + אייקונים), שאינה מוצר
+      const upsertMeta = async (patch) => {
+        if (metaId) {
+          const { error } = await sb.from(TABLE).update(patch).eq('id', metaId);
+          if (error) throw error;
+        } else {
+          const { data, error } = await sb.from(TABLE).insert({ category: '_meta', title: 'profile', url: '-', ...patch }).select().single();
+          if (error) throw error;
+          setMetaId(data.id);
+        }
+      };
+      const saveProfile = async (dataUrl) => { await upsertMeta({ image: dataUrl }); setProfileImg(dataUrl); };
+      const saveSettings = async (partial) => {
+        const next = mergeSettings(settings, partial);
+        setSettings(next);
+        await upsertMeta({ description: JSON.stringify(next) });
+      };
+
+      const tryAdmin = () => {
+        const code = prompt('הזיני סיסמת ניהול:');
+        if (code === null) return;
+        if (code === ADMIN_CODE) setAdmin(true);
+        else alert('סיסמה שגויה');
+      };
+
+      if (admin) return (
+        <CatIconCtx.Provider value={settings.icons}>
+          <Admin products={products} profileImg={profileImg} onSaveProfile={saveProfile}
+            settings={settings} onSaveSettings={saveSettings}
+            onAdd={add} onUpdate={update} onDelete={remove} onExit={() => setAdmin(false)} />
+        </CatIconCtx.Provider>
+      );
+
+      return (
+        <CatIconCtx.Provider value={settings.icons}>
+        <div className="min-h-screen pb-16 w-full overflow-x-hidden">
+          {/* שכבת רקע קבועה (יציבה במובייל, בלי חיתוך) */}
+          {settings.bg && <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: -1, backgroundImage: `url(${settings.bg})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />}
+          {/* כניסת ניהול קבועה (נגישה תמיד) */}
+          <button onClick={tryAdmin} title="ניהול"
+            className="fixed top-3 left-3 z-50 bg-white/80 backdrop-blur border border-[#f0e3d8] text-[#b3a59f] hover:text-[#263238] rounded-full p-2 shadow-sm">
+            <Lock size={16} />
+          </button>
+
+          {/* כותרת */}
+          <header className="text-center px-5 pt-12 pb-6 max-w-xl mx-auto">
+            <div className="mb-5 flex justify-center">
+              <div className="rounded-full p-[3px] bg-gradient-to-tr from-[#C59976] via-[#E8B4B8] to-[#ED8888] shadow-xl">
+                <ProfilePic size={128} src={profileImg} />
+              </div>
+            </div>
+            <h1 className="font-display text-3xl sm:text-4xl font-normal text-[#263238]">{HERO_TITLE}</h1>
+            <div className="flex items-center justify-center gap-3 my-4">
+              <span className="h-px w-10 bg-gradient-to-l from-transparent to-[#C59976]"></span>
+              <span className="gold-text text-lg leading-none">✦</span>
+              <span className="h-px w-10 bg-gradient-to-r from-transparent to-[#C59976]"></span>
+            </div>
+            <p className="text-[#7a6b66] leading-relaxed text-[15px] sm:text-base max-w-md mx-auto">
+              {HERO_INTRO}
+            </p>
+          </header>
+
+          {/* המגירות */}
+          <main className="max-w-xl mx-auto px-4 space-y-4">
+            {loading && <p className="text-center text-[#a08e88] py-10">טוען מוצרים...</p>}
+            {loadError && <p className="text-center text-sm text-[#c0848a] bg-[#fbeeee] rounded-xl py-3 px-4">{loadError}</p>}
+            {!loading && CATEGORIES.map(cat => (
+              <Drawer key={cat.key} cat={{ ...cat, label: settings.labels[cat.key] || cat.label }}
+                desc={settings.descs[cat.key] || ''}
+                products={products.filter(p => p.category === cat.key)}
+                open={openKey === cat.key}
+                onToggle={() => setOpenKey(openKey === cat.key ? null : cat.key)} />
+            ))}
+          </main>
+
+          {/* גילוי נאות + כניסת ניהול */}
+          <footer className="max-w-xl mx-auto px-5 mt-10 text-center">
+            <p className="text-xs text-[#b3a59f] leading-relaxed">כל הקישורים כאן הם קישורי שותפים (אפיליאייט) — רכישה דרכם מזכה אותי בעמלה קטנה, ללא תוספת עלות לכן 🤍</p>
+            <p className="mt-6 text-sm text-[#9a8a84]">
+              נבנה באהבה על ידי <a href="https://avitaletzion.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#a78a94] hover:text-[#7a6b66] underline decoration-[#d9b9c4] underline-offset-2">אביטל עציון</a> 💜
+            </p>
+            <button onClick={tryAdmin} className="mt-4 inline-flex items-center gap-1 text-[#cdbfb8] hover:text-[#7a6b66] text-xs">
+              <Lock size={13} /> ניהול
+            </button>
+          </footer>
+        </div>
+        </CatIconCtx.Provider>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
