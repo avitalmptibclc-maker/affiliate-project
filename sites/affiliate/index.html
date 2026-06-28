@@ -94,13 +94,19 @@
     const DEFAULT_ICONS = { relationships: 'heart', pregnancy: 'baby', breastfeeding: 'droplet', development: 'star' };
 
     /* הגדרות שניתנות לעריכה דרך הניהול: אייקונים, שמות מגירות והסברים */
+    const DEFAULT_TITLE = 'היושששש מהממת!';
+    const DEFAULT_SUBTITLE = 'אני אביטל, פיזיותרפיסטית ויועצת הנקה IBCLC. אני סאקרית של מוצרים איכותיים ומשתמשת בעצמי במוצרים משובחים, עדינים ובריאים. אספתי בשבילך את המוצרים שאני משתמשת בהם בלי סוף בקליניקה ובבית:';
     const DEFAULT_SETTINGS = {
+      title: DEFAULT_TITLE,
+      subtitle: DEFAULT_SUBTITLE,
       icons: DEFAULT_ICONS,
       labels: Object.fromEntries(CATEGORIES.map(c => [c.key, c.label])),
       descs: Object.fromEntries(CATEGORIES.map(c => [c.key, ''])),
       bg: '',
     };
     const mergeSettings = (b, o = {}) => ({
+      title:    o.title    !== undefined ? o.title    : b.title,
+      subtitle: o.subtitle !== undefined ? o.subtitle : b.subtitle,
       icons:  { ...b.icons,  ...(o.icons  || {}) },
       labels: { ...b.labels, ...(o.labels || {}) },
       descs:  { ...b.descs,  ...(o.descs  || {}) },
@@ -185,7 +191,7 @@
         </button>
         <div className="drawer-body" style={{ maxHeight: open ? '4000px' : '0', opacity: open ? 1 : 0 }}>
           <div className="p-4 pt-1 space-y-3" style={{ background: cat.soft + '55' }}>
-            {desc && <p className="text-sm text-[#7a6b66] bg-white/70 rounded-2xl p-3.5 leading-relaxed">{desc}</p>}
+            {desc && <p className="text-sm text-[#7a6b66] bg-white/70 rounded-2xl p-3.5 leading-relaxed whitespace-pre-line">{desc}</p>}
             {products.length === 0
               ? <p className="text-center text-[#a08e88] py-4 text-sm">עדיין אין כאן מוצרים 🤍</p>
               : products.map(p => <ProductCard key={p.id} p={p} />)}
@@ -203,6 +209,8 @@
       const [profSaving, setProfSaving] = useState(false);
       const [labels, setLabels] = useState(settings.labels);
       const [descs, setDescs] = useState(settings.descs);
+      const [title, setTitle] = useState(settings.title);
+      const [subtitle, setSubtitle] = useState(settings.subtitle);
 
       const changeProfile = (file) => {
         if (!file) return;
@@ -315,6 +323,18 @@
             </div>
           </div>
 
+          {/* כותרת הדף וטקסט פתיחה */}
+          <div className="bg-white rounded-3xl p-5 glam-card border border-[#f0e3d8] mb-6">
+            <h3 className="font-bold text-[#263238] mb-1">כותרת הדף וטקסט פתיחה</h3>
+            <p className="text-xs text-[#a08e88] mb-4">הטקסטים שמופיעים בראש הדף. נשמרים אוטומטית.</p>
+            <label className="block text-sm font-semibold mb-1 text-[#263238]">כותרת ראשית</label>
+            <input value={title} onChange={e => setTitle(e.target.value)} onBlur={() => onSaveSettings({ title })}
+              className={INPUT} placeholder="הכותרת הגדולה בראש הדף" />
+            <label className="block text-sm font-semibold mb-1 mt-4 text-[#263238]">טקסט פתיחה (כותרת משנה)</label>
+            <textarea rows={4} value={subtitle} onChange={e => setSubtitle(e.target.value)} onBlur={() => onSaveSettings({ subtitle })}
+              className={INPUT} placeholder="משפט/פסקה קצרה שמסבירה מי את ומה יש בדף" />
+          </div>
+
           {/* עריכת המגירות: שם, הסבר ואייקון */}
           <div className="bg-white rounded-3xl p-5 glam-card border border-[#f0e3d8] mb-6">
             <h3 className="font-bold text-[#263238] mb-1">המגירות (נושאי הקישורים)</h3>
@@ -330,12 +350,12 @@
                       onBlur={() => onSaveSettings({ labels })}
                       className="w-full bg-white rounded-lg px-3 py-2 font-semibold border border-[#e7d8cd] focus:outline-none focus:ring-2 focus:ring-[#ED8888]"
                       style={{ color: c.color }} placeholder="שם המגירה" />
-                    <textarea rows={2}
+                    <textarea rows={4}
                       value={descs[c.key]}
                       onChange={e => setDescs(prev => ({ ...prev, [c.key]: e.target.value }))}
                       onBlur={() => onSaveSettings({ descs })}
                       className="w-full mt-2 bg-white rounded-lg px-3 py-2 text-sm border border-[#e7d8cd] focus:outline-none focus:ring-2 focus:ring-[#ED8888]"
-                      placeholder="הסבר קצר על מה שיש במגירה הזו (יופיע מתחת לכותרת המגירה)" />
+                      placeholder="מלל חופשי — הסברים מקצועיים שיופיעו בראש המגירה (אפשר כמה שורות)" />
                     <div className="flex flex-wrap gap-2 mt-3">
                       {Object.keys(ICON_LIBRARY).map(name => {
                         const Ico = ICON_LIBRARY[name];
@@ -546,14 +566,14 @@
                 <ProfilePic size={128} src={profileImg} />
               </div>
             </div>
-            <h1 className="font-display text-3xl sm:text-4xl font-normal text-[#263238]">היושששש מהממת!</h1>
+            <h1 className="font-display text-3xl sm:text-4xl font-normal text-[#263238]">{settings.title}</h1>
             <div className="flex items-center justify-center gap-3 my-4">
               <span className="h-px w-10 bg-gradient-to-l from-transparent to-[#C59976]"></span>
               <span className="gold-text text-lg leading-none">✦</span>
               <span className="h-px w-10 bg-gradient-to-r from-transparent to-[#C59976]"></span>
             </div>
-            <p className="text-[#7a6b66] leading-relaxed text-[15px] sm:text-base max-w-md mx-auto">
-              אני אביטל, פיזיותרפיסטית ויועצת הנקה IBCLC. אני סאקרית של מוצרים איכותיים ומשתמשת בעצמי במוצרים משובחים, עדינים ובריאים. אספתי בשבילך את המוצרים שאני משתמשת בהם בלי סוף בקליניקה ובבית:
+            <p className="text-[#7a6b66] leading-relaxed text-[15px] sm:text-base max-w-md mx-auto whitespace-pre-line">
+              {settings.subtitle}
             </p>
           </header>
 
