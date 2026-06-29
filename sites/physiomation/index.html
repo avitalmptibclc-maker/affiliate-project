@@ -21,7 +21,7 @@
     }
     body {
       font-family: 'Varela Round', 'Heebo', Arial, sans-serif;
-      background: radial-gradient(130% 90% at 50% 0%, #2C5450 0%, #21403D 50%, #182E2C 100%);
+      background: radial-gradient(125% 90% at 50% 0%, #EAF3F0 0%, #F8FAF8 45%, #F2F0EB 100%);
       min-height: 100vh;
     }
     * { box-sizing: border-box; }
@@ -723,13 +723,13 @@
                 <ProfilePic size={128} src={profileImg} />
               </div>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-normal text-[#EAF2EF]" style={{ fontFamily: fontCss(settings.fonts.title) }}>{settings.title}</h1>
+            <h1 className="text-3xl sm:text-4xl font-normal text-[#22403D]" style={{ fontFamily: fontCss(settings.fonts.title) }}>{settings.title}</h1>
             <div className="flex items-center justify-center gap-3 my-4">
               <span className="h-px w-10 bg-gradient-to-l from-transparent to-[#C59976]"></span>
               <span className="gold-text text-lg leading-none">✦</span>
               <span className="h-px w-10 bg-gradient-to-r from-transparent to-[#C59976]"></span>
             </div>
-            <p className="text-[#AFC9C2] leading-relaxed text-[15px] sm:text-base max-w-md mx-auto whitespace-pre-line" style={{ fontFamily: fontCss(settings.fonts.subtitle) }}>
+            <p className="text-[#6E8581] leading-relaxed text-[15px] sm:text-base max-w-md mx-auto whitespace-pre-line" style={{ fontFamily: fontCss(settings.fonts.subtitle) }}>
               {settings.subtitle}
             </p>
           </header>
@@ -749,12 +749,12 @@
 
           {/* גילוי נאות + כניסת ניהול */}
           <footer className="max-w-xl mx-auto px-5 mt-10 text-center">
-            <p className="text-xs text-[#8FA8A2] leading-relaxed">כל הקישורים כאן הם קישורי שותפים (אפיליאייט) — רכישה דרכם מזכה אותי בעמלה קטנה, ללא תוספת עלות לכן 🤍</p>
-            <p className="mt-3 text-xs text-[#cfe0db] leading-relaxed bg-white/10 rounded-xl px-4 py-3">
+            <p className="text-xs text-[#94a3a0] leading-relaxed">כל הקישורים כאן הם קישורי שותפים (אפיליאייט) — רכישה דרכם מזכה אותי בעמלה קטנה, ללא תוספת עלות לכן 🤍</p>
+            <p className="mt-3 text-xs text-[#7e8c89] leading-relaxed bg-white/60 rounded-xl px-4 py-3">
               ⚠️ התוכן בדף זה הוא להשראה והמלצה כללית בלבד, ואינו מהווה ייעוץ רפואי, מקצועי או אישי. בכל שאלה או החלטה יש להתייעץ עם איש/אשת מקצוע מוסמך/ת.
             </p>
-            <p className="mt-6 text-sm text-[#9FBDB6]">
-              נבנה באהבה על ידי <a href="https://avitaletzion.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#C0A9DA] hover:text-white underline decoration-[#9579BE] underline-offset-2">אביטל עציון</a> 💜
+            <p className="mt-6 text-sm text-[#7e8c89]">
+              נבנה באהבה על ידי <a href="https://avitaletzion.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#9579BE] hover:text-[#6E8581] underline decoration-[#c9bce0] underline-offset-2">אביטל עציון</a> 💜
             </p>
             <button onClick={tryAdmin} className="mt-4 inline-flex items-center gap-1 text-[#cdbfb8] hover:text-[#7a6b66] text-xs">
               <Lock size={13} /> ניהול
