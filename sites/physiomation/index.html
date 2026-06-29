@@ -665,6 +665,32 @@
       );
     }
 
+    /* ====== קרוסלת באנרים — החלפה אוטומטית + נקודות אינדיקציה ====== */
+    const BannerCarousel = ({ banners }) => {
+      const [idx, setIdx] = useState(0);
+      useEffect(() => {
+        if (!banners || banners.length <= 1) return;
+        const t = setInterval(() => setIdx(i => (i + 1) % banners.length), 4500);
+        return () => clearInterval(t);
+      }, [banners.length]);
+      useEffect(() => { if (idx >= banners.length) setIdx(0); }, [banners.length]);
+      return (
+        <div className="relative w-full h-44 sm:h-60 bg-[#21403D] overflow-hidden" style={{ borderBottomLeftRadius: '30px', borderBottomRightRadius: '30px' }}>
+          {banners.map((b, i) => (
+            <img key={i} src={b} alt="" className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700" style={{ opacity: i === idx ? 1 : 0 }} />
+          ))}
+          {banners.length > 1 && (
+            <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
+              {banners.map((_, i) => (
+                <button key={i} onClick={() => setIdx(i)} aria-label={'מעבר לבאנר ' + (i + 1)}
+                  className="rounded-full transition-all" style={{ width: i === idx ? 20 : 7, height: 7, background: i === idx ? '#ffffff' : 'rgba(255,255,255,.5)' }} />
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    };
+
     /* ====== האפליקציה ====== */
     function App() {
       const [products, setProducts] = useState([]);
@@ -771,11 +797,7 @@
           {(settings.banners && settings.banners.length) ? (
             /* Hero עם קרוסלת באנרים — רק התמונות למעלה, והכיתוב מתחתיהן */
             <header className="mb-2">
-              <div className="w-full flex overflow-x-auto snap-x snap-mandatory no-scrollbar bg-[#21403D]" style={{ borderBottomLeftRadius: '30px', borderBottomRightRadius: '30px' }}>
-                {settings.banners.map((b, i) => (
-                  <img key={i} src={b} alt="" className="snap-center shrink-0 w-full h-44 sm:h-60 object-cover" />
-                ))}
-              </div>
+              <BannerCarousel banners={settings.banners} />
               <div className="text-center px-5 pt-6 pb-4 max-w-xl mx-auto">
                 <div className="mb-4 flex justify-center">
                   <div className="rounded-full p-[3px] bg-gradient-to-tr from-[#7E5EA8] via-[#9E84C9] to-[#43B0A0] shadow-lg">
