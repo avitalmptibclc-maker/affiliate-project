@@ -21,7 +21,7 @@
     }
     body {
       font-family: 'Varela Round', 'Heebo', Arial, sans-serif;
-      background: radial-gradient(125% 80% at 50% 0%, #FBEAE3 0%, #FBF6F1 42%, #F5ECE5 100%);
+      background: radial-gradient(130% 90% at 50% 0%, #2C5450 0%, #21403D 50%, #182E2C 100%);
       min-height: 100vh;
     }
     * { box-sizing: border-box; }
@@ -71,10 +71,10 @@
 
     /* ====== ארבע המגירות — שמות ברירת מחדל (הלקוח/ה משנה בניהול) ====== */
     const CATEGORIES = [
-      { key: 'cat1', label: 'נושא ראשון',  emoji: '💗', color: '#AA8A94', soft: '#F1E7EA' },
-      { key: 'cat2', label: 'נושא שני',    emoji: '🤰', color: '#ED8888', soft: '#FBE6E6' },
-      { key: 'cat3', label: 'נושא שלישי',  emoji: '🤱', color: '#C59976', soft: '#F1E6DA' },
-      { key: 'cat4', label: 'נושא רביעי',  emoji: '🧸', color: '#7FB0B0', soft: '#DCEDED' },
+      { key: 'cat1', label: 'נושא ראשון',  emoji: '💗', color: '#B87E5C', soft: '#F0E4DA' },
+      { key: 'cat2', label: 'נושא שני',    emoji: '🤰', color: '#3FA293', soft: '#DCEFEA' },
+      { key: 'cat3', label: 'נושא שלישי',  emoji: '🤱', color: '#9579BE', soft: '#ECE5F5' },
+      { key: 'cat4', label: 'נושא רביעי',  emoji: '🧸', color: '#C77E8E', soft: '#F6E5EA' },
     ];
     const catOf = (key) => CATEGORIES.find(c => c.key === key) || CATEGORIES[0];
 
@@ -595,7 +595,7 @@
           )}
 
           <button onClick={() => setOpen(!open)} aria-label="פתיחת תפריט נגישות"
-            className="w-14 h-14 rounded-full bg-[#ED8888] hover:bg-[#e07373] text-white shadow-lg flex items-center justify-center border-2 border-white">
+            className="w-14 h-14 rounded-full bg-[#3FA293] hover:bg-[#34897b] text-white shadow-lg flex items-center justify-center border-2 border-white">
             <Accessibility size={28} />
           </button>
 
@@ -719,17 +719,17 @@
           {/* כותרת */}
           <header className="text-center px-5 pt-12 pb-6 max-w-xl mx-auto">
             <div className="mb-5 flex justify-center">
-              <div className="rounded-full p-[3px] bg-gradient-to-tr from-[#C59976] via-[#E8B4B8] to-[#ED8888] shadow-xl">
+              <div className="rounded-full p-[3px] bg-gradient-to-tr from-[#B87E5C] via-[#9579BE] to-[#3FA293] shadow-xl">
                 <ProfilePic size={128} src={profileImg} />
               </div>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-normal text-[#263238]" style={{ fontFamily: fontCss(settings.fonts.title) }}>{settings.title}</h1>
+            <h1 className="text-3xl sm:text-4xl font-normal text-[#EAF2EF]" style={{ fontFamily: fontCss(settings.fonts.title) }}>{settings.title}</h1>
             <div className="flex items-center justify-center gap-3 my-4">
               <span className="h-px w-10 bg-gradient-to-l from-transparent to-[#C59976]"></span>
               <span className="gold-text text-lg leading-none">✦</span>
               <span className="h-px w-10 bg-gradient-to-r from-transparent to-[#C59976]"></span>
             </div>
-            <p className="text-[#7a6b66] leading-relaxed text-[15px] sm:text-base max-w-md mx-auto whitespace-pre-line" style={{ fontFamily: fontCss(settings.fonts.subtitle) }}>
+            <p className="text-[#AFC9C2] leading-relaxed text-[15px] sm:text-base max-w-md mx-auto whitespace-pre-line" style={{ fontFamily: fontCss(settings.fonts.subtitle) }}>
               {settings.subtitle}
             </p>
           </header>
@@ -749,12 +749,12 @@
 
           {/* גילוי נאות + כניסת ניהול */}
           <footer className="max-w-xl mx-auto px-5 mt-10 text-center">
-            <p className="text-xs text-[#b3a59f] leading-relaxed">כל הקישורים כאן הם קישורי שותפים (אפיליאייט) — רכישה דרכם מזכה אותי בעמלה קטנה, ללא תוספת עלות לכן 🤍</p>
-            <p className="mt-3 text-xs text-[#b3a59f] leading-relaxed bg-white/50 rounded-xl px-4 py-3">
+            <p className="text-xs text-[#8FA8A2] leading-relaxed">כל הקישורים כאן הם קישורי שותפים (אפיליאייט) — רכישה דרכם מזכה אותי בעמלה קטנה, ללא תוספת עלות לכן 🤍</p>
+            <p className="mt-3 text-xs text-[#cfe0db] leading-relaxed bg-white/10 rounded-xl px-4 py-3">
               ⚠️ התוכן בדף זה הוא להשראה והמלצה כללית בלבד, ואינו מהווה ייעוץ רפואי, מקצועי או אישי. בכל שאלה או החלטה יש להתייעץ עם איש/אשת מקצוע מוסמך/ת.
             </p>
-            <p className="mt-6 text-sm text-[#9a8a84]">
-              נבנה באהבה על ידי <a href="https://avitaletzion.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#a78a94] hover:text-[#7a6b66] underline decoration-[#d9b9c4] underline-offset-2">אביטל עציון</a> 💜
+            <p className="mt-6 text-sm text-[#9FBDB6]">
+              נבנה באהבה על ידי <a href="https://avitaletzion.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#C0A9DA] hover:text-white underline decoration-[#9579BE] underline-offset-2">אביטל עציון</a> 💜
             </p>
             <button onClick={tryAdmin} className="mt-4 inline-flex items-center gap-1 text-[#cdbfb8] hover:text-[#7a6b66] text-xs">
               <Lock size={13} /> ניהול
