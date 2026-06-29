@@ -42,16 +42,14 @@
        ============================================================
        1. SITE_PREFIX  — קידומת ייחודית באנגלית (קובעת את שם הטבלה ב-Supabase).
        2. ADMIN_CODE   — סיסמת הניהול של הלקוח/ה.
-       3. BRAND_NAME / HERO_TITLE / HERO_INTRO — הטקסטים בראש הדף.
-       4. SUPABASE_URL / SUPABASE_ANON_KEY — מתוך פרויקט ה-Supabase
-          (פרויקט נפרד לכל לקוח/ה = הכי נקי, או פרויקט משותף עם קידומת שונה).
-       כל השאר (תמונת פרופיל, רקע, שמות המגירות, ההסברים, האייקונים והמוצרים)
-       נערך ע"י הלקוח/ה מתוך פאנל הניהול — בלי לגעת בקוד.
+       3. BRAND_NAME / HERO_TITLE / HERO_INTRO — טקסטים התחלתיים (ניתנים לעריכה גם מהניהול).
+       4. SUPABASE_URL / SUPABASE_ANON_KEY — מתוך פרויקט ה-Supabase של הלקוח/ה.
+       כל השאר (תמונה, רקע, כותרות, מגירות, הסברים, פונטים, מוצרים) נערך מפאנל הניהול.
        ============================================================ */
     const SITE_PREFIX = "CHANGE_ME";        // אותיות אנגליות בלבד, בלי רווחים
     const ADMIN_CODE  = "0000";             // שני לסיסמת הניהול של הלקוח/ה
     const BRAND_NAME  = "השם שלי";          // מופיע בכותרת לשונית הדפדפן
-    const HERO_TITLE  = "היוששש מהממת!";     // הכותרת הגדולה בראש הדף
+    const HERO_TITLE  = "היוששש מהממת!";     // כותרת ראשית התחלתית
     const HERO_INTRO  = "כאן כותבים משפט פתיחה קצר — מי את ומה אספת בשביל הקהל שלך.";
 
     const TABLE = `${SITE_PREFIX}_products`;
@@ -61,7 +59,7 @@
     const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    /* ====== ארבע המגירות — שמות ברירת מחדל (הלקוח/ה משנה אותם בניהול) ====== */
+    /* ====== ארבע המגירות — שמות ברירת מחדל (הלקוח/ה משנה בניהול) ====== */
     const CATEGORIES = [
       { key: 'cat1', label: 'נושא ראשון',  emoji: '💗', color: '#AA8A94', soft: '#F1E7EA' },
       { key: 'cat2', label: 'נושא שני',    emoji: '🤰', color: '#ED8888', soft: '#FBE6E6' },
@@ -105,13 +103,20 @@
     };
     const DEFAULT_ICONS = { cat1: 'heart', cat2: 'star', cat3: 'droplet', cat4: 'smile' };
 
-    /* הגדרות שניתנות לעריכה דרך הניהול: אייקונים, שמות מגירות והסברים */
+    /* הגדרות שניתנות לעריכה דרך הניהול */
+    const DEFAULT_TITLE = HERO_TITLE;
+    const DEFAULT_SUBTITLE = HERO_INTRO;
+    const DEFAULT_FONTS = {
+      title: 'Playpen Sans Hebrew', subtitle: 'Varela Round',
+      drawerTitle: 'Playpen Sans Hebrew', drawerDesc: 'Varela Round', productText: 'Varela Round',
+    };
     const DEFAULT_SETTINGS = {
-      title: HERO_TITLE,
-      subtitle: HERO_INTRO,
+      title: DEFAULT_TITLE,
+      subtitle: DEFAULT_SUBTITLE,
       icons: DEFAULT_ICONS,
       labels: Object.fromEntries(CATEGORIES.map(c => [c.key, c.label])),
       descs: Object.fromEntries(CATEGORIES.map(c => [c.key, ''])),
+      fonts: DEFAULT_FONTS,
       bg: '',
     };
     const mergeSettings = (b, o = {}) => ({
@@ -120,6 +125,7 @@
       icons:  { ...b.icons,  ...(o.icons  || {}) },
       labels: { ...b.labels, ...(o.labels || {}) },
       descs:  { ...b.descs,  ...(o.descs  || {}) },
+      fonts:  { ...b.fonts,  ...(o.fonts  || {}) },
       bg: o.bg !== undefined ? o.bg : b.bg,
     });
 
@@ -130,6 +136,27 @@
       const C = ICON_LIBRARY[name] || ICON_LIBRARY.heart;
       return <span style={{ color, display: 'inline-flex' }}><C size={size} /></span>;
     };
+
+    /* ====== ספריית פונטים (כולם תומכי עברית) ====== */
+    const FONTS = [
+      'Playpen Sans Hebrew', 'Varela Round', 'Heebo', 'Assistant', 'Rubik', 'Alef',
+      'Frank Ruhl Libre', 'Bellefair', 'David Libre', 'Miriam Libre', 'Noto Serif Hebrew',
+      'Suez One', 'Secular One', 'Karantina', 'Gveret Levin', 'Amatic SC',
+      'Rubik Doodle Shadow', 'Rubik Dirt', 'Rubik Wet Paint',
+    ];
+    const fontCss = (name) => name ? `'${name}', 'Varela Round', sans-serif` : "'Varela Round', sans-serif";
+    // טוען מ-Google Fonts רק את הפונטים שבשימוש בפועל
+    const ensureFonts = (fonts) => {
+      const fams = [...new Set(Object.values(fonts || {}).filter(Boolean))];
+      if (!fams.length) return;
+      const href = 'https://fonts.googleapis.com/css2?' +
+        fams.map(f => 'family=' + encodeURIComponent(f).replace(/%20/g, '+') + ':wght@400;500;700').join('&') +
+        '&display=swap';
+      let link = document.getElementById('dyn-fonts');
+      if (!link) { link = document.createElement('link'); link.id = 'dyn-fonts'; link.rel = 'stylesheet'; document.head.appendChild(link); }
+      if (link.href !== href) link.href = href;
+    };
+    const FontsCtx = React.createContext(DEFAULT_FONTS);
 
     /* ====== המרת נתונים ====== */
     const fromDb = (r) => ({ id: r.id, category: r.category, title: r.title || '', description: r.description || '', url: r.url || '', image: r.image || '' });
@@ -170,9 +197,11 @@
     /* ====== כרטיס מוצר (תצוגה ציבורית) ====== */
     const ProductCard = ({ p }) => {
       const c = catOf(p.category);
+      const fonts = React.useContext(FontsCtx);
       return (
         <a href={p.url} target="_blank" rel="sponsored noopener noreferrer"
-          className="group flex items-center gap-3 sm:gap-4 bg-white rounded-2xl p-3 shadow-sm border border-[#f0e3d8] active:scale-[.99] hover:shadow-md hover:-translate-y-0.5 transition-all">
+          className="group flex items-center gap-3 sm:gap-4 bg-white rounded-2xl p-3 shadow-sm border border-[#f0e3d8] active:scale-[.99] hover:shadow-md hover:-translate-y-0.5 transition-all"
+          style={{ fontFamily: fontCss(fonts.productText) }}>
           <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex-shrink-0 flex items-center justify-center text-3xl overflow-hidden border border-[#f0e3d8]"
             style={{ background: '#fff' }}>
             {p.image ? <img src={p.image} alt={p.title} loading="lazy" className="w-full h-full object-cover" /> : <CatIcon k={c.key} size={30} color={c.color} />}
@@ -190,25 +219,28 @@
     };
 
     /* ====== מגירה (אקורדיון) ====== */
-    const Drawer = ({ cat, desc, products, open, onToggle }) => (
+    const Drawer = ({ cat, desc, products, open, onToggle }) => {
+      const fonts = React.useContext(FontsCtx);
+      return (
       <div className="rounded-3xl overflow-hidden glam-card border border-[#f3e7dd] bg-white">
         <button onClick={onToggle} className="w-full flex items-center gap-3 p-5 text-right transition"
           style={{ background: open ? cat.soft : '#ffffff' }}>
           <span className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ring-1 ring-white/60" style={{ background: cat.soft }}><CatIcon k={cat.key} size={24} color={cat.color} /></span>
-          <span className="flex-1 font-display text-lg sm:text-xl font-normal text-[#263238]">{cat.label}</span>
+          <span className="flex-1 text-lg sm:text-xl font-normal text-[#263238]" style={{ fontFamily: fontCss(fonts.drawerTitle) }}>{cat.label}</span>
           <span className="text-xs text-white rounded-full px-2.5 py-1 font-semibold shadow-sm" style={{ background: cat.color }}>{products.length}</span>
           <Chevron size={22} className={"text-[#a08e88] transition-transform " + (open ? "rotate-180" : "")} />
         </button>
         <div className="drawer-body" style={{ maxHeight: open ? '4000px' : '0', opacity: open ? 1 : 0 }}>
           <div className="p-4 pt-1 space-y-3" style={{ background: cat.soft + '55' }}>
-            {desc && <p className="text-sm text-[#7a6b66] bg-white/70 rounded-2xl p-3.5 leading-relaxed whitespace-pre-line">{desc}</p>}
+            {desc && <p className="text-sm text-[#7a6b66] bg-white/70 rounded-2xl p-3.5 leading-relaxed whitespace-pre-line" style={{ fontFamily: fontCss(fonts.drawerDesc) }}>{desc}</p>}
             {products.length === 0
               ? <p className="text-center text-[#a08e88] py-4 text-sm">עדיין אין כאן מוצרים 🤍</p>
               : products.map(p => <ProductCard key={p.id} p={p} />)}
           </div>
         </div>
       </div>
-    );
+      );
+    };
 
     /* ====== ממשק ניהול ====== */
     const Admin = ({ products, profileImg, onSaveProfile, settings, onSaveSettings, onAdd, onUpdate, onDelete, onExit }) => {
@@ -221,6 +253,15 @@
       const [descs, setDescs] = useState(settings.descs);
       const [title, setTitle] = useState(settings.title);
       const [subtitle, setSubtitle] = useState(settings.subtitle);
+
+      // טעינת כל הפונטים לתצוגה מקדימה ברשימת הבחירה (רק כשהניהול פתוח)
+      useEffect(() => {
+        const href = 'https://fonts.googleapis.com/css2?' +
+          FONTS.map(f => 'family=' + encodeURIComponent(f).replace(/%20/g, '+')).join('&') + '&display=swap';
+        let l = document.getElementById('dyn-fonts-all');
+        if (!l) { l = document.createElement('link'); l.id = 'dyn-fonts-all'; l.rel = 'stylesheet'; document.head.appendChild(l); }
+        l.href = href;
+      }, []);
 
       const changeProfile = (file) => {
         if (!file) return;
@@ -343,6 +384,25 @@
             <label className="block text-sm font-semibold mb-1 mt-4 text-[#263238]">טקסט פתיחה (כותרת משנה)</label>
             <textarea rows={4} value={subtitle} onChange={e => setSubtitle(e.target.value)} onBlur={() => onSaveSettings({ subtitle })}
               className={INPUT} placeholder="משפט/פסקה קצרה שמסבירה מי את ומה יש בדף" />
+          </div>
+
+          {/* בחירת פונטים לכל אזור */}
+          <div className="bg-white rounded-3xl p-5 glam-card border border-[#f0e3d8] mb-6">
+            <h3 className="font-bold text-[#263238] mb-1">פונטים</h3>
+            <p className="text-xs text-[#a08e88] mb-4">בחרי פונט לכל אזור בדף. נשמר אוטומטית.</p>
+            <div className="space-y-3">
+              {[['title', 'כותרת ראשית'], ['subtitle', 'טקסט פתיחה'], ['drawerTitle', 'שמות המגירות'], ['drawerDesc', 'הסברי המגירות'], ['productText', 'טקסט המוצרים']].map(([slot, label]) => (
+                <div key={slot} className="flex items-center gap-3">
+                  <span className="text-sm text-[#263238] w-28 flex-shrink-0">{label}</span>
+                  <select value={settings.fonts[slot]}
+                    onChange={e => onSaveSettings({ fonts: { ...settings.fonts, [slot]: e.target.value } })}
+                    className="flex-1 px-3 py-2 rounded-xl border border-[#e7d8cd] bg-white focus:outline-none focus:ring-2 focus:ring-[#ED8888]"
+                    style={{ fontFamily: fontCss(settings.fonts[slot]) }}>
+                    {FONTS.map(f => <option key={f} value={f} style={{ fontFamily: fontCss(f) }}>{f}</option>)}
+                  </select>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* עריכת המגירות: שם, הסבר ואייקון */}
@@ -508,6 +568,7 @@
         } finally { setLoading(false); }
       };
       useEffect(() => { load(); document.title = BRAND_NAME + ' — ההמלצות שלי'; }, []);
+      useEffect(() => { ensureFonts(settings.fonts); }, [settings.fonts]);
 
       const add = async (p) => {
         const { data, error } = await sb.from(TABLE).insert(toDb(p)).select().single();
@@ -552,14 +613,17 @@
 
       if (admin) return (
         <CatIconCtx.Provider value={settings.icons}>
+        <FontsCtx.Provider value={settings.fonts}>
           <Admin products={products} profileImg={profileImg} onSaveProfile={saveProfile}
             settings={settings} onSaveSettings={saveSettings}
             onAdd={add} onUpdate={update} onDelete={remove} onExit={() => setAdmin(false)} />
+        </FontsCtx.Provider>
         </CatIconCtx.Provider>
       );
 
       return (
         <CatIconCtx.Provider value={settings.icons}>
+        <FontsCtx.Provider value={settings.fonts}>
         <div className="min-h-screen pb-16 w-full overflow-x-hidden">
           {/* שכבת רקע קבועה (יציבה במובייל, בלי חיתוך) */}
           {settings.bg && <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: -1, backgroundImage: `url(${settings.bg})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />}
@@ -576,13 +640,13 @@
                 <ProfilePic size={128} src={profileImg} />
               </div>
             </div>
-            <h1 className="font-display text-3xl sm:text-4xl font-normal text-[#263238]">{settings.title}</h1>
+            <h1 className="text-3xl sm:text-4xl font-normal text-[#263238]" style={{ fontFamily: fontCss(settings.fonts.title) }}>{settings.title}</h1>
             <div className="flex items-center justify-center gap-3 my-4">
               <span className="h-px w-10 bg-gradient-to-l from-transparent to-[#C59976]"></span>
               <span className="gold-text text-lg leading-none">✦</span>
               <span className="h-px w-10 bg-gradient-to-r from-transparent to-[#C59976]"></span>
             </div>
-            <p className="text-[#7a6b66] leading-relaxed text-[15px] sm:text-base max-w-md mx-auto whitespace-pre-line">
+            <p className="text-[#7a6b66] leading-relaxed text-[15px] sm:text-base max-w-md mx-auto whitespace-pre-line" style={{ fontFamily: fontCss(settings.fonts.subtitle) }}>
               {settings.subtitle}
             </p>
           </header>
@@ -611,6 +675,7 @@
             </button>
           </footer>
         </div>
+        </FontsCtx.Provider>
         </CatIconCtx.Provider>
       );
     }
