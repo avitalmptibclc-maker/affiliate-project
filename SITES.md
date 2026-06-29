@@ -38,8 +38,9 @@
 - **תיקייה:** `sites/physiomation/`
 - **Supabase:** `physiomation_products`
 - **סיסמת ניהול:** `5845`
-- **סוג:** קישור בביו — 4 מגירות
-- **כתובת:** (בהקמה — Vercel)
+- **סוג:** קישור בביו — מגירות + קרוסלות + באנר עליון
+- **כתובת:** https://physiomation.vercel.app
+- **הערת פריסה:** פרויקט Vercel `physiomation` עם Root Directory `./` שמשתמש ב-`vercel.json` שבשורש (rewrite → sites/physiomation). האפיליאייט מוגדר על Root Directory `sites/affiliate` ולכן מתעלם מ-`vercel.json`.
 
 ---
 
