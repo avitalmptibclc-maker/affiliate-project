@@ -199,6 +199,14 @@
     const ProductCard = ({ p }) => {
       const c = catOf(p.category);
       const fonts = React.useContext(FontsCtx);
+      const [copied, setCopied] = useState(false);
+      const cMatch = (p.description || '').match(/(?:קוד\s*קופון|קופון|coupon|promo\s*code|code)\s*[:\-]?\s*([A-Za-z0-9]{3,16})/i);
+      const code = cMatch ? cMatch[1] : '';
+      const copyCode = (e) => {
+        e.preventDefault(); e.stopPropagation();
+        if (navigator.clipboard) navigator.clipboard.writeText(code);
+        setCopied(true); setTimeout(() => setCopied(false), 1500);
+      };
       return (
         <a href={p.url} target="_blank" rel="sponsored noopener noreferrer"
           className="group flex items-center gap-3 sm:gap-4 bg-white rounded-2xl p-3 shadow-sm border border-[#f0e3d8] active:scale-[.99] hover:shadow-md hover:-translate-y-0.5 transition-all"
@@ -209,8 +217,11 @@
           </div>
           <div className="min-w-0 flex-1">
             <h4 className="font-bold text-[#263238] leading-tight break-words">{p.title}</h4>
-            {p.description && <p className="text-xs sm:text-sm text-[#7a6b66] mt-1 leading-snug break-words line-clamp-3">{p.description}</p>}
-            <span className="inline-flex items-center gap-1 mt-2 text-xs font-semibold" style={{ color: c.color }}>לצפייה ורכישה <ExternalLink size={13} /></span>
+            {p.description && <p className="text-xs sm:text-sm text-[#7a6b66] mt-1 leading-snug break-words">{p.description}</p>}
+            <div className="flex flex-wrap items-center gap-2 mt-2">
+              {code && <button onClick={copyCode} className="inline-flex items-center gap-1 text-xs font-bold rounded-full px-3 py-1 border" style={{ color: c.color, borderColor: c.color + '66', background: c.soft }}>{copied ? '✓ הקוד הועתק' : '📋 קוד: ' + code}</button>}
+              <span className="inline-flex items-center gap-1 text-xs font-semibold" style={{ color: c.color }}>לצפייה ורכישה <ExternalLink size={13} /></span>
+            </div>
           </div>
           <div className="flex-shrink-0 text-white rounded-full p-2 self-center group-hover:scale-110 transition" style={{ background: c.color }}>
             <ExternalLink size={18} />
