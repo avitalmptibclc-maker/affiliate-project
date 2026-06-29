@@ -79,6 +79,7 @@
       { key: 'cat2', label: 'חצובות',     emoji: '📷', color: '#3E9B8C', soft: '#DCEFEB' }, // טורקיז
       { key: 'cat3', label: 'תאורה',      emoji: '💡', color: '#9E84C9', soft: '#ECE6F4' }, // לבנדר
       { key: 'cat4', label: 'אביזרים',    emoji: '🎬', color: '#357C71', soft: '#DCEBE8' }, // טורקיז כהה
+      { key: 'cat5', label: 'סדנאות דיגיטליות', emoji: '🎓', color: '#C99A5B', soft: '#F3E9D8' }, // זהב — לרכישה מיידית
     ];
     const catOf = (key) => CATEGORIES.find(c => c.key === key) || CATEGORIES[0];
 
@@ -116,7 +117,7 @@
       award:    (p) => <Icon {...p}><circle cx="12" cy="8" r="6" /><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" /></Icon>,
       feather:  (p) => <Icon {...p}><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z" /><path d="M16 8 2 22" /><path d="M17.5 15H9" /></Icon>,
     };
-    const DEFAULT_ICONS = { cat1: 'heart', cat2: 'star', cat3: 'droplet', cat4: 'smile' };
+    const DEFAULT_ICONS = { cat1: 'heart', cat2: 'star', cat3: 'droplet', cat4: 'smile', cat5: 'award' };
 
     /* הגדרות שניתנות לעריכה דרך הניהול */
     const DEFAULT_TITLE = HERO_TITLE;
@@ -133,6 +134,7 @@
       descs: Object.fromEntries(CATEGORIES.map(c => [c.key, ''])),
       fonts: DEFAULT_FONTS,
       bg: '',
+      hero: '',
     };
     const mergeSettings = (b, o = {}) => ({
       title:    o.title    !== undefined ? o.title    : b.title,
@@ -142,6 +144,7 @@
       descs:  { ...b.descs,  ...(o.descs  || {}) },
       fonts:  { ...b.fonts,  ...(o.fonts  || {}) },
       bg: o.bg !== undefined ? o.bg : b.bg,
+      hero: o.hero !== undefined ? o.hero : b.hero,
     });
 
     const CatIconCtx = React.createContext({});
@@ -307,6 +310,17 @@
         }, 1080);
       };
 
+      const [heroSaving, setHeroSaving] = useState(false);
+      const changeHero = (file) => {
+        if (!file) return;
+        setHeroSaving(true);
+        resizeImage(file, async (dataUrl) => {
+          try { await onSaveSettings({ hero: dataUrl }); }
+          catch (e) { alert('שגיאה בשמירת תמונת הנושא: ' + (e.message || e)); }
+          finally { setHeroSaving(false); }
+        }, 1200);
+      };
+
       const [imgLoading, setImgLoading] = useState(false);
 
       // משיכה אוטומטית של תמונת המוצר מתוך הקישור
@@ -394,6 +408,26 @@
                 </label>
                 {settings.bg && <button type="button" onClick={() => onSaveSettings({ bg: '' })} className="text-xs text-[#c0848a] hover:underline mr-3">הסרה (חזרה לברירת מחדל)</button>}
                 <p className="text-xs text-[#a08e88] mt-2">מומלץ תמונה לאורך ובהירה. נדחסת אוטומטית לטעינה מהירה.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* תמונת נושא (באנר עליון) */}
+          <div className="bg-white rounded-3xl p-5 shadow-sm border border-[#f0e3d8] mb-6">
+            <h3 className="font-bold text-[#263238] mb-1">תמונת נושא (באנר עליון)</h3>
+            <p className="text-xs text-[#a08e88] mb-3">תחליף את הראש הכהה בתמונה שתבחרי. אם לא מעלים — נשאר העיצוב הדרמטי הכהה.</p>
+            <div className="flex items-center gap-4">
+              <div className="w-24 h-14 rounded-xl border border-[#e7d8cd] overflow-hidden flex-shrink-0 bg-[#21403D] flex items-center justify-center"
+                style={settings.hero ? { backgroundImage: `url(${settings.hero})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}>
+                {!settings.hero && <span className="text-[10px] text-white/70">כהה</span>}
+              </div>
+              <div className="flex-1">
+                <label className="inline-flex items-center gap-2 cursor-pointer bg-[#3E9B8C] hover:bg-[#34867a] text-white text-sm font-semibold px-4 py-2.5 rounded-xl">
+                  <Upload size={16} /> {heroSaving ? 'מעלה...' : (settings.hero ? 'החלפת תמונה' : 'העלאת תמונה')}
+                  <input type="file" accept="image/*" className="hidden" disabled={heroSaving} onChange={e => changeHero(e.target.files[0])} />
+                </label>
+                {settings.hero && <button type="button" onClick={() => onSaveSettings({ hero: '' })} className="text-xs text-[#c0848a] hover:underline mr-3">הסרה (חזרה לכהה)</button>}
+                <p className="text-xs text-[#a08e88] mt-2">מומלץ תמונה רוחבית. הכיתוב יופיע מתחתיה.</p>
               </div>
             </div>
           </div>
@@ -729,25 +763,51 @@
             <Lock size={16} />
           </button>
 
-          {/* כותרת — Hero כהה דרמטי */}
-          <header className="hero-dark text-center px-5 pt-14 pb-12 mb-2" style={{ borderBottomLeftRadius: '44px', borderBottomRightRadius: '44px' }}>
-            <div className="max-w-xl mx-auto">
-              <div className="mb-5 flex justify-center">
-                <div className="rounded-full p-[3px] bg-gradient-to-tr from-[#7E5EA8] via-[#9E84C9] to-[#43B0A0] shadow-[0_8px_40px_-6px_rgba(126,94,168,0.7)]">
-                  <ProfilePic size={132} src={profileImg} />
+          {/* כותרת */}
+          {settings.hero ? (
+            /* Hero עם תמונת נושא — רק התמונה למעלה, והכיתוב מתחתיה */
+            <header className="mb-2">
+              <div className="w-full h-44 sm:h-60 overflow-hidden bg-[#21403D]" style={{ borderBottomLeftRadius: '30px', borderBottomRightRadius: '30px' }}>
+                <img src={settings.hero} alt="" className="w-full h-full object-cover" />
+              </div>
+              <div className="text-center px-5 pt-6 pb-4 max-w-xl mx-auto">
+                <div className="mb-4 flex justify-center">
+                  <div className="rounded-full p-[3px] bg-gradient-to-tr from-[#7E5EA8] via-[#9E84C9] to-[#43B0A0] shadow-lg">
+                    <ProfilePic size={104} src={profileImg} />
+                  </div>
                 </div>
+                <h1 className="text-3xl sm:text-4xl font-normal text-[#2F4F4B]" style={{ fontFamily: fontCss(settings.fonts.title) }}>{settings.title}</h1>
+                <div className="flex items-center justify-center gap-3 my-4">
+                  <span className="h-px w-12 bg-gradient-to-l from-transparent to-[#C99A5B]"></span>
+                  <span className="gold-text text-lg leading-none">✦</span>
+                  <span className="h-px w-12 bg-gradient-to-r from-transparent to-[#C99A5B]"></span>
+                </div>
+                <p className="text-[#6E8581] leading-relaxed text-[15px] sm:text-base max-w-md mx-auto whitespace-pre-line" style={{ fontFamily: fontCss(settings.fonts.subtitle) }}>
+                  {settings.subtitle}
+                </p>
               </div>
-              <h1 className="holo-text text-4xl sm:text-5xl font-normal tracking-tight drop-shadow" style={{ fontFamily: fontCss(settings.fonts.title) }}>{settings.title}</h1>
-              <div className="flex items-center justify-center gap-3 my-4">
-                <span className="h-px w-12 bg-gradient-to-l from-transparent to-[#6FD0BE]"></span>
-                <span className="holo-text text-lg leading-none">✦</span>
-                <span className="h-px w-12 bg-gradient-to-r from-transparent to-[#6FD0BE]"></span>
+            </header>
+          ) : (
+            /* Hero כהה דרמטי (ברירת מחדל, כשאין תמונת נושא) */
+            <header className="hero-dark text-center px-5 pt-14 pb-12 mb-2" style={{ borderBottomLeftRadius: '44px', borderBottomRightRadius: '44px' }}>
+              <div className="max-w-xl mx-auto">
+                <div className="mb-5 flex justify-center">
+                  <div className="rounded-full p-[3px] bg-gradient-to-tr from-[#7E5EA8] via-[#9E84C9] to-[#43B0A0] shadow-[0_8px_40px_-6px_rgba(126,94,168,0.7)]">
+                    <ProfilePic size={132} src={profileImg} />
+                  </div>
+                </div>
+                <h1 className="holo-text text-4xl sm:text-5xl font-normal tracking-tight drop-shadow" style={{ fontFamily: fontCss(settings.fonts.title) }}>{settings.title}</h1>
+                <div className="flex items-center justify-center gap-3 my-4">
+                  <span className="h-px w-12 bg-gradient-to-l from-transparent to-[#6FD0BE]"></span>
+                  <span className="holo-text text-lg leading-none">✦</span>
+                  <span className="h-px w-12 bg-gradient-to-r from-transparent to-[#6FD0BE]"></span>
+                </div>
+                <p className="text-[#C8DAD5] leading-relaxed text-[15px] sm:text-base max-w-md mx-auto whitespace-pre-line" style={{ fontFamily: fontCss(settings.fonts.subtitle) }}>
+                  {settings.subtitle}
+                </p>
               </div>
-              <p className="text-[#C8DAD5] leading-relaxed text-[15px] sm:text-base max-w-md mx-auto whitespace-pre-line" style={{ fontFamily: fontCss(settings.fonts.subtitle) }}>
-                {settings.subtitle}
-              </p>
-            </div>
-          </header>
+            </header>
+          )}
 
           {/* המגירות */}
           <main className="max-w-xl mx-auto px-4 space-y-4">
