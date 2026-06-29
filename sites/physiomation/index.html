@@ -29,6 +29,8 @@
     .gold-text { background: linear-gradient(90deg,#B98A63,#E3BC92,#B98A63); -webkit-background-clip:text; background-clip:text; color:transparent; }
     .glam-card { box-shadow: 0 10px 30px -12px rgba(124,83,60,.18); }
     .drawer-body { transition: max-height .4s ease, opacity .3s ease; overflow: hidden; }
+    .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
 
     /* ====== מצבי נגישות ====== */
     html.a11y-font-1 { font-size: 112.5%; }
@@ -219,7 +221,7 @@
       };
       return (
         <a href={p.url} target="_blank" rel="sponsored noopener noreferrer"
-          className="group flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm border border-[#f0e3d8] active:scale-[.99] hover:shadow-md hover:-translate-y-0.5 transition-all"
+          className="group w-full h-full flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm border border-[#f0e3d8] active:scale-[.99] hover:shadow-md hover:-translate-y-0.5 transition-all"
           style={{ fontFamily: fontCss(fonts.productText) }}>
           <div className="w-full aspect-square bg-white flex items-center justify-center overflow-hidden border-b border-[#f3e7dd]">
             {p.image ? <img src={p.image} alt={p.title} loading="lazy" className="w-full h-full object-cover" /> : <CatIcon k={c.key} size={46} color={c.color} />}
@@ -252,7 +254,9 @@
             {desc && <p className="text-sm text-[#7a6b66] bg-white/70 rounded-2xl p-3.5 leading-relaxed whitespace-pre-line mb-3" style={{ fontFamily: fontCss(fonts.drawerDesc) }}>{desc}</p>}
             {products.length === 0
               ? <p className="text-center text-[#a08e88] py-4 text-sm">עדיין אין כאן מוצרים 🤍</p>
-              : <div className="grid grid-cols-2 gap-3">{products.map(p => <ProductCard key={p.id} p={p} />)}</div>}
+              : <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-1 -mx-1 px-1">
+                  {products.map(p => <div key={p.id} className="snap-start shrink-0 w-40"><ProductCard p={p} /></div>)}
+                </div>}
           </div>
         </div>
       </div>
