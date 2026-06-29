@@ -1,5 +1,7 @@
 {
   "rewrites": [
+    { "source": "/physiomation", "destination": "/sites/physiomation/index.html" },
+    { "source": "/physiomation/(.*)", "destination": "/sites/physiomation/index.html" },
     { "source": "/(.*)", "destination": "/sites/affiliate/index.html" }
   ]
 }
