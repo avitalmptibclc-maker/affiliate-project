@@ -29,6 +29,16 @@
     .gold-text { background: linear-gradient(90deg,#B98A63,#E3BC92,#B98A63); -webkit-background-clip:text; background-clip:text; color:transparent; }
     .glam-card { box-shadow: 0 10px 30px -12px rgba(124,83,60,.18); }
     .drawer-body { transition: max-height .4s ease, opacity .3s ease; overflow: hidden; }
+
+    /* ====== מצבי נגישות ====== */
+    html.a11y-font-1 { font-size: 112.5%; }
+    html.a11y-font-2 { font-size: 125%; }
+    html.a11y-readable, html.a11y-readable * { font-family: Arial, 'Helvetica Neue', sans-serif !important; letter-spacing: .01em; }
+    html.a11y-links a { text-decoration: underline !important; }
+    html.a11y-contrast body { background: #000 !important; }
+    html.a11y-contrast *:not(svg):not(path):not(img) { color: #fff !important; border-color: #555 !important; background-image: none !important; }
+    html.a11y-contrast .bg-white, html.a11y-contrast nav, html.a11y-contrast header, html.a11y-contrast [class*="bg-["] { background: #111 !important; }
+    html.a11y-contrast a, html.a11y-contrast button { color: #ff0 !important; }
   </style>
 </head>
 <body>
@@ -81,6 +91,7 @@
     const Plus = (p) => <Icon {...p}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon>;
     const Back = (p) => <Icon {...p}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 19 19 12 12 5" /></Icon>;
     const Upload = (p) => <Icon {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></Icon>;
+    const Accessibility = (p) => <Icon {...p}><circle cx="12" cy="4" r="1.6" fill="currentColor" stroke="none" /><path d="M5 8h14" /><path d="M12 8v7" /><path d="M12 15l-3.5 5" /><path d="M12 15l3.5 5" /></Icon>;
 
     /* ====== ספריית אייקונים לבחירה (קו עדין) ====== */
     const ICON_LIBRARY = {
@@ -531,6 +542,78 @@
       );
     };
 
+    /* ====== תוסף נגישות (הגדלת טקסט, ניגודיות, הדגשת קישורים, גופן קריא) ====== */
+    function AccessibilityWidget() {
+      const [open, setOpen] = useState(false);
+      const [font, setFont] = useState(() => +(localStorage.getItem('a11y_font') || 0));
+      const [contrast, setContrast] = useState(() => localStorage.getItem('a11y_contrast') === '1');
+      const [links, setLinks] = useState(() => localStorage.getItem('a11y_links') === '1');
+      const [readable, setReadable] = useState(() => localStorage.getItem('a11y_readable') === '1');
+      const [stmt, setStmt] = useState(false);
+
+      useEffect(() => {
+        const h = document.documentElement;
+        h.classList.toggle('a11y-font-1', font === 1);
+        h.classList.toggle('a11y-font-2', font === 2);
+        h.classList.toggle('a11y-contrast', contrast);
+        h.classList.toggle('a11y-links', links);
+        h.classList.toggle('a11y-readable', readable);
+        localStorage.setItem('a11y_font', font);
+        localStorage.setItem('a11y_contrast', contrast ? '1' : '0');
+        localStorage.setItem('a11y_links', links ? '1' : '0');
+        localStorage.setItem('a11y_readable', readable ? '1' : '0');
+      }, [font, contrast, links, readable]);
+
+      const reset = () => { setFont(0); setContrast(false); setLinks(false); setReadable(false); };
+      const Toggle = ({ on, onClick, children }) => (
+        <button onClick={onClick} aria-pressed={on}
+          className={`w-full text-right px-4 py-2.5 rounded-xl border text-sm font-medium transition flex items-center justify-between ${on ? 'bg-[#ED8888] text-white border-[#ED8888]' : 'bg-[#FBF6F1] text-[#263238] border-[#f0e3d8] hover:bg-[#fdf3ee]'}`}>
+          <span>{children}</span><span>{on ? '✓' : ''}</span>
+        </button>
+      );
+
+      return (
+        <div className="fixed bottom-4 left-4 z-[60]">
+          {open && (
+            <div role="dialog" aria-label="תפריט נגישות" className="mb-3 w-64 bg-white rounded-2xl shadow-xl border border-[#f0e3d8] p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-bold text-[#263238]">נגישות</h3>
+                <button onClick={() => setOpen(false)} aria-label="סגירת תפריט נגישות" className="text-[#c0848a] text-2xl leading-none">×</button>
+              </div>
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <button onClick={() => setFont(Math.max(0, font - 1))} aria-label="הקטנת טקסט" className="flex-1 py-2 rounded-xl border border-[#f0e3d8] bg-[#FBF6F1] hover:bg-[#fdf3ee] font-bold text-[#263238]">א-</button>
+                  <button onClick={() => setFont(Math.min(2, font + 1))} aria-label="הגדלת טקסט" className="flex-1 py-2 rounded-xl border border-[#f0e3d8] bg-[#FBF6F1] hover:bg-[#fdf3ee] font-bold text-[#263238]">א+</button>
+                </div>
+                <Toggle on={contrast} onClick={() => setContrast(!contrast)}>ניגודיות גבוהה</Toggle>
+                <Toggle on={links} onClick={() => setLinks(!links)}>הדגשת קישורים</Toggle>
+                <Toggle on={readable} onClick={() => setReadable(!readable)}>גופן קריא</Toggle>
+                <button onClick={reset} className="w-full py-2 rounded-xl border border-[#f0e3d8] text-[#263238] hover:bg-[#fdf3ee] text-sm">איפוס</button>
+                <button onClick={() => setStmt(true)} className="w-full text-xs text-[#7a6b66] underline pt-1">הצהרת נגישות</button>
+              </div>
+            </div>
+          )}
+
+          <button onClick={() => setOpen(!open)} aria-label="פתיחת תפריט נגישות"
+            className="w-14 h-14 rounded-full bg-[#ED8888] hover:bg-[#e07373] text-white shadow-lg flex items-center justify-center border-2 border-white">
+            <Accessibility size={28} />
+          </button>
+
+          {stmt && (
+            <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-6 z-[70]" onClick={() => setStmt(false)}>
+              <div className="bg-white rounded-2xl p-6 max-w-md w-full text-right" onClick={e => e.stopPropagation()}>
+                <h3 className="text-xl font-bold text-[#263238] mb-3">הצהרת נגישות</h3>
+                <p className="text-sm text-[#263238] leading-relaxed mb-4">
+                  אנו רואים חשיבות רבה בהנגשת הדף לכלל המשתמשים. הדף כולל כלי נגישות להגדלת טקסט, ניגודיות גבוהה, הדגשת קישורים וגופן קריא, ונעשה מאמץ להתאימו לעקרונות התקן הישראלי (ת"י 5568) ברמת AA. נתקלתם בקושי? נשמח לסייע דרך פרטי הקשר בדף.
+                </p>
+                <button onClick={() => setStmt(false)} className="w-full bg-[#ED8888] hover:bg-[#e07373] text-white font-bold py-3 rounded-xl">סגירה</button>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
     /* ====== האפליקציה ====== */
     function App() {
       const [products, setProducts] = useState([]);
@@ -667,6 +750,9 @@
           {/* גילוי נאות + כניסת ניהול */}
           <footer className="max-w-xl mx-auto px-5 mt-10 text-center">
             <p className="text-xs text-[#b3a59f] leading-relaxed">כל הקישורים כאן הם קישורי שותפים (אפיליאייט) — רכישה דרכם מזכה אותי בעמלה קטנה, ללא תוספת עלות לכן 🤍</p>
+            <p className="mt-3 text-xs text-[#b3a59f] leading-relaxed bg-white/50 rounded-xl px-4 py-3">
+              ⚠️ התוכן בדף זה הוא להשראה והמלצה כללית בלבד, ואינו מהווה ייעוץ רפואי, מקצועי או אישי. בכל שאלה או החלטה יש להתייעץ עם איש/אשת מקצוע מוסמך/ת.
+            </p>
             <p className="mt-6 text-sm text-[#9a8a84]">
               נבנה באהבה על ידי <a href="https://avitaletzion.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#a78a94] hover:text-[#7a6b66] underline decoration-[#d9b9c4] underline-offset-2">אביטל עציון</a> 💜
             </p>
@@ -674,6 +760,7 @@
               <Lock size={13} /> ניהול
             </button>
           </footer>
+          <AccessibilityWidget />
         </div>
         </FontsCtx.Provider>
         </CatIconCtx.Provider>
