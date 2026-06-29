@@ -229,8 +229,9 @@
         <a href={p.url} target="_blank" rel="sponsored noopener noreferrer"
           className="group w-full h-full flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm border border-[#f0e3d8] active:scale-[.99] hover:shadow-md hover:-translate-y-0.5 transition-all"
           style={{ fontFamily: fontCss(fonts.productText) }}>
-          <div className="w-full aspect-square bg-white flex items-center justify-center overflow-hidden border-b border-[#f3e7dd]">
-            {p.image ? <img src={p.image} alt={p.title} loading="lazy" className="w-full h-full object-cover" /> : <CatIcon k={c.key} size={46} color={c.color} />}
+          <div className="w-full aspect-square flex items-center justify-center overflow-hidden border-b border-[#f3e7dd]"
+            style={{ background: p.image ? '#fff' : `linear-gradient(135deg, ${c.soft}, #ffffff)` }}>
+            {p.image ? <img src={p.image} alt={p.title} loading="lazy" className="w-full h-full object-cover" /> : <CatIcon k={c.key} size={48} color={c.color} />}
           </div>
           <div className="p-3 flex flex-col flex-1">
             <h4 className="font-bold text-[#263238] leading-tight break-words text-sm">{p.title}</h4>
