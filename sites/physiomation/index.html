@@ -58,9 +58,9 @@
        ============================================================ */
     const SITE_PREFIX = "physiomation";     // טבלה: physiomation_products
     const ADMIN_CODE  = "5845";             // סיסמת ניהול (אפשר לשנות)
-    const BRAND_NAME  = "פייזומיישן";       // מופיע בכותרת לשונית הדפדפן
-    const HERO_TITLE  = "פייזומיישן";        // כותרת ראשית — ערכי דרך הניהול
-    const HERO_INTRO  = "כאן יבוא טקסט הפתיחה — ערכי אותו דרך פאנל הניהול.";
+    const BRAND_NAME  = "פיזיומיישן";       // מופיע בכותרת לשונית הדפדפן
+    const HERO_TITLE  = "פיזיומיישן";        // כותרת ראשית — ערכי דרך הניהול
+    const HERO_INTRO  = "אני סאקרית של ציוד הכי טוב שיש. תמיד יש לי את הטלפון הכי מתקדם, את המחשב הכי מהיר. אין מה לעשות — אוהבת גאדג'טים שעובדים, ועובדים היטב 🎬";
 
     const TABLE = `${SITE_PREFIX}_products`;
 
@@ -71,10 +71,10 @@
 
     /* ====== ארבע המגירות — שמות ברירת מחדל (הלקוח/ה משנה בניהול) ====== */
     const CATEGORIES = [
-      { key: 'cat1', label: 'נושא ראשון',  emoji: '💗', color: '#B87E5C', soft: '#F0E4DA' },
-      { key: 'cat2', label: 'נושא שני',    emoji: '🤰', color: '#3FA293', soft: '#DCEFEA' },
-      { key: 'cat3', label: 'נושא שלישי',  emoji: '🤱', color: '#9579BE', soft: '#ECE5F5' },
-      { key: 'cat4', label: 'נושא רביעי',  emoji: '🧸', color: '#C77E8E', soft: '#F6E5EA' },
+      { key: 'cat1', label: 'מיקרופונים', emoji: '🎙️', color: '#B87E5C', soft: '#F0E4DA' },
+      { key: 'cat2', label: 'חצובות',     emoji: '📷', color: '#3FA293', soft: '#DCEFEA' },
+      { key: 'cat3', label: 'תאורה',      emoji: '💡', color: '#9579BE', soft: '#ECE5F5' },
+      { key: 'cat4', label: 'אביזרים',    emoji: '🎬', color: '#C77E8E', soft: '#F6E5EA' },
     ];
     const catOf = (key) => CATEGORIES.find(c => c.key === key) || CATEGORIES[0];
 
@@ -738,7 +738,7 @@
           <main className="max-w-xl mx-auto px-4 space-y-4">
             {loading && <p className="text-center text-[#a08e88] py-10">טוען מוצרים...</p>}
             {loadError && <p className="text-center text-sm text-[#c0848a] bg-[#fbeeee] rounded-xl py-3 px-4">{loadError}</p>}
-            {!loading && CATEGORIES.map(cat => (
+            {!loading && CATEGORIES.filter(cat => products.some(p => p.category === cat.key)).map(cat => (
               <Drawer key={cat.key} cat={{ ...cat, label: settings.labels[cat.key] || cat.label }}
                 desc={settings.descs[cat.key] || ''}
                 products={products.filter(p => p.category === cat.key)}
