@@ -228,7 +228,6 @@
           style={{ background: open ? cat.soft : '#ffffff' }}>
           <span className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ring-1 ring-white/60" style={{ background: cat.soft }}><CatIcon k={cat.key} size={24} color={cat.color} /></span>
           <span className="flex-1 text-lg sm:text-xl font-normal text-[#263238]" style={{ fontFamily: fontCss(fonts.drawerTitle) }}>{cat.label}</span>
-          <span className="text-xs text-white rounded-full px-2.5 py-1 font-semibold shadow-sm" style={{ background: cat.color }}>{products.length}</span>
           <Chevron size={22} className={"text-[#a08e88] transition-transform " + (open ? "rotate-180" : "")} />
         </button>
         <div className="drawer-body" style={{ maxHeight: open ? '4000px' : '0', opacity: open ? 1 : 0 }}>
