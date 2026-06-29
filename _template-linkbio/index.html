@@ -315,6 +315,7 @@
                    || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
             if (m) img = m[1];
           }
+          if (img) img = img.replace(/^http:\/\//i, 'https://'); // מניעת חסימת תמונה לא-מאובטחת
           if (img) setForm(f => ({ ...f, image: img }));
         } catch (e) { /* בשקט — תמיד אפשר להוסיף תמונה ידנית */ }
         finally { setImgLoading(false); }
