@@ -71,10 +71,10 @@
 
     /* ====== ארבע המגירות — שמות ברירת מחדל (הלקוח/ה משנה בניהול) ====== */
     const CATEGORIES = [
-      { key: 'cat1', label: 'מיקרופונים', emoji: '🎙️', color: '#B87E5C', soft: '#F0E4DA' },
-      { key: 'cat2', label: 'חצובות',     emoji: '📷', color: '#3FA293', soft: '#DCEFEA' },
-      { key: 'cat3', label: 'תאורה',      emoji: '💡', color: '#9579BE', soft: '#ECE5F5' },
-      { key: 'cat4', label: 'אביזרים',    emoji: '🎬', color: '#C77E8E', soft: '#F6E5EA' },
+      { key: 'cat1', label: 'מיקרופונים', emoji: '🎙️', color: '#C26A4B', soft: '#F3E3DA' }, // נחושת
+      { key: 'cat2', label: 'חצובות',     emoji: '📷', color: '#3E9B8C', soft: '#DCEFEB' }, // טורקיז
+      { key: 'cat3', label: 'תאורה',      emoji: '💡', color: '#9E84C9', soft: '#ECE6F4' }, // לבנדר
+      { key: 'cat4', label: 'אביזרים',    emoji: '🎬', color: '#357C71', soft: '#DCEBE8' }, // טורקיז כהה
     ];
     const catOf = (key) => CATEGORIES.find(c => c.key === key) || CATEGORIES[0];
 
@@ -595,7 +595,7 @@
           )}
 
           <button onClick={() => setOpen(!open)} aria-label="פתיחת תפריט נגישות"
-            className="w-14 h-14 rounded-full bg-[#3FA293] hover:bg-[#34897b] text-white shadow-lg flex items-center justify-center border-2 border-white">
+            className="w-14 h-14 rounded-full bg-[#3E9B8C] hover:bg-[#34867a] text-white shadow-lg flex items-center justify-center border-2 border-white">
             <Accessibility size={28} />
           </button>
 
@@ -719,11 +719,11 @@
           {/* כותרת */}
           <header className="text-center px-5 pt-12 pb-6 max-w-xl mx-auto">
             <div className="mb-5 flex justify-center">
-              <div className="rounded-full p-[3px] bg-gradient-to-tr from-[#B87E5C] via-[#9579BE] to-[#3FA293] shadow-xl">
+              <div className="rounded-full p-[3px] bg-gradient-to-tr from-[#7E5EA8] via-[#9E84C9] to-[#43B0A0] shadow-xl">
                 <ProfilePic size={128} src={profileImg} />
               </div>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-normal text-[#22403D]" style={{ fontFamily: fontCss(settings.fonts.title) }}>{settings.title}</h1>
+            <h1 className="text-3xl sm:text-4xl font-normal text-[#2F4F4B]" style={{ fontFamily: fontCss(settings.fonts.title) }}>{settings.title}</h1>
             <div className="flex items-center justify-center gap-3 my-4">
               <span className="h-px w-10 bg-gradient-to-l from-transparent to-[#C59976]"></span>
               <span className="gold-text text-lg leading-none">✦</span>
@@ -754,7 +754,7 @@
               ⚠️ התוכן בדף זה הוא להשראה והמלצה כללית בלבד, ואינו מהווה ייעוץ רפואי, מקצועי או אישי. בכל שאלה או החלטה יש להתייעץ עם איש/אשת מקצוע מוסמך/ת.
             </p>
             <p className="mt-6 text-sm text-[#7e8c89]">
-              נבנה באהבה על ידי <a href="https://avitaletzion.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#9579BE] hover:text-[#6E8581] underline decoration-[#c9bce0] underline-offset-2">אביטל עציון</a> 💜
+              נבנה באהבה על ידי <a href="https://avitaletzion.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#7E5EA8] hover:text-[#43B0A0] underline decoration-[#cdbce4] underline-offset-2">אביטל עציון</a> 💜
             </p>
             <button onClick={tryAdmin} className="mt-4 inline-flex items-center gap-1 text-[#cdbfb8] hover:text-[#7a6b66] text-xs">
               <Lock size={13} /> ניהול
