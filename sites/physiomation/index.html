@@ -134,7 +134,7 @@
       descs: Object.fromEntries(CATEGORIES.map(c => [c.key, ''])),
       fonts: DEFAULT_FONTS,
       bg: '',
-      hero: '',
+      banners: [],
     };
     const mergeSettings = (b, o = {}) => ({
       title:    o.title    !== undefined ? o.title    : b.title,
@@ -144,7 +144,8 @@
       descs:  { ...b.descs,  ...(o.descs  || {}) },
       fonts:  { ...b.fonts,  ...(o.fonts  || {}) },
       bg: o.bg !== undefined ? o.bg : b.bg,
-      hero: o.hero !== undefined ? o.hero : b.hero,
+      // תאימות לאחור: hero בודד -> מערך banners
+      banners: o.banners !== undefined ? o.banners : (o.hero ? [o.hero] : b.banners),
     });
 
     const CatIconCtx = React.createContext({});
@@ -311,15 +312,16 @@
       };
 
       const [heroSaving, setHeroSaving] = useState(false);
-      const changeHero = (file) => {
+      const addBanner = (file) => {
         if (!file) return;
         setHeroSaving(true);
         resizeImage(file, async (dataUrl) => {
-          try { await onSaveSettings({ hero: dataUrl }); }
-          catch (e) { alert('שגיאה בשמירת תמונת הנושא: ' + (e.message || e)); }
+          try { await onSaveSettings({ banners: [...(settings.banners || []), dataUrl] }); }
+          catch (e) { alert('שגיאה בשמירת הבאנר: ' + (e.message || e)); }
           finally { setHeroSaving(false); }
         }, 1200);
       };
+      const removeBanner = (i) => onSaveSettings({ banners: (settings.banners || []).filter((_, idx) => idx !== i) });
 
       const [imgLoading, setImgLoading] = useState(false);
 
@@ -412,24 +414,26 @@
             </div>
           </div>
 
-          {/* תמונת נושא (באנר עליון) */}
+          {/* תמונות נושא (קרוסלת באנרים) */}
           <div className="bg-white rounded-3xl p-5 shadow-sm border border-[#f0e3d8] mb-6">
-            <h3 className="font-bold text-[#263238] mb-1">תמונת נושא (באנר עליון)</h3>
-            <p className="text-xs text-[#a08e88] mb-3">תחליף את הראש הכהה בתמונה שתבחרי. אם לא מעלים — נשאר העיצוב הדרמטי הכהה.</p>
-            <div className="flex items-center gap-4">
-              <div className="w-24 h-14 rounded-xl border border-[#e7d8cd] overflow-hidden flex-shrink-0 bg-[#21403D] flex items-center justify-center"
-                style={settings.hero ? { backgroundImage: `url(${settings.hero})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}>
-                {!settings.hero && <span className="text-[10px] text-white/70">כהה</span>}
-              </div>
-              <div className="flex-1">
-                <label className="inline-flex items-center gap-2 cursor-pointer bg-[#3E9B8C] hover:bg-[#34867a] text-white text-sm font-semibold px-4 py-2.5 rounded-xl">
-                  <Upload size={16} /> {heroSaving ? 'מעלה...' : (settings.hero ? 'החלפת תמונה' : 'העלאת תמונה')}
-                  <input type="file" accept="image/*" className="hidden" disabled={heroSaving} onChange={e => changeHero(e.target.files[0])} />
-                </label>
-                {settings.hero && <button type="button" onClick={() => onSaveSettings({ hero: '' })} className="text-xs text-[#c0848a] hover:underline mr-3">הסרה (חזרה לכהה)</button>}
-                <p className="text-xs text-[#a08e88] mt-2">מומלץ תמונה רוחבית. הכיתוב יופיע מתחתיה.</p>
-              </div>
+            <h3 className="font-bold text-[#263238] mb-1">תמונות נושא (קרוסלה)</h3>
+            <p className="text-xs text-[#a08e88] mb-3">העלי תמונה אחת או יותר — הן יוצגו בקרוסלה בראש הדף (במקום הראש הכהה). הכיתוב יופיע מתחתיהן.</p>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {(settings.banners || []).map((b, i) => (
+                <div key={i} className="relative w-24 h-14 rounded-xl overflow-hidden border border-[#e7d8cd]">
+                  <img src={b} className="w-full h-full object-cover" />
+                  <button type="button" onClick={() => removeBanner(i)} aria-label="הסרה"
+                    className="absolute top-0.5 left-0.5 bg-black/55 text-white rounded-full w-5 h-5 leading-none text-xs flex items-center justify-center">×</button>
+                </div>
+              ))}
+              {(!settings.banners || settings.banners.length === 0) &&
+                <div className="w-24 h-14 rounded-xl border border-[#e7d8cd] bg-[#21403D] flex items-center justify-center text-[10px] text-white/70">כהה (ברירת מחדל)</div>}
             </div>
+            <label className="inline-flex items-center gap-2 cursor-pointer bg-[#3E9B8C] hover:bg-[#34867a] text-white text-sm font-semibold px-4 py-2.5 rounded-xl">
+              <Upload size={16} /> {heroSaving ? 'מעלה...' : 'הוספת באנר'}
+              <input type="file" accept="image/*" className="hidden" disabled={heroSaving} onChange={e => addBanner(e.target.files[0])} />
+            </label>
+            <p className="text-xs text-[#a08e88] mt-2">מומלץ תמונות רוחביות.</p>
           </div>
 
           {/* כותרת הדף וטקסט פתיחה */}
@@ -764,11 +768,13 @@
           </button>
 
           {/* כותרת */}
-          {settings.hero ? (
-            /* Hero עם תמונת נושא — רק התמונה למעלה, והכיתוב מתחתיה */
+          {(settings.banners && settings.banners.length) ? (
+            /* Hero עם קרוסלת באנרים — רק התמונות למעלה, והכיתוב מתחתיהן */
             <header className="mb-2">
-              <div className="w-full h-44 sm:h-60 overflow-hidden bg-[#21403D]" style={{ borderBottomLeftRadius: '30px', borderBottomRightRadius: '30px' }}>
-                <img src={settings.hero} alt="" className="w-full h-full object-cover" />
+              <div className="w-full flex overflow-x-auto snap-x snap-mandatory no-scrollbar bg-[#21403D]" style={{ borderBottomLeftRadius: '30px', borderBottomRightRadius: '30px' }}>
+                {settings.banners.map((b, i) => (
+                  <img key={i} src={b} alt="" className="snap-center shrink-0 w-full h-44 sm:h-60 object-cover" />
+                ))}
               </div>
               <div className="text-center px-5 pt-6 pb-4 max-w-xl mx-auto">
                 <div className="mb-4 flex justify-center">
