@@ -111,6 +111,16 @@
       title: 'Playpen Sans Hebrew', subtitle: 'Varela Round',
       drawerTitle: 'Playpen Sans Hebrew', drawerDesc: 'Varela Round', productText: 'Varela Round',
     };
+    // הבהרת צבע ל-tint רך (לרקע האייקון/המגירה)
+    const lighten = (hex, amt = 0.85) => {
+      const h = (hex || '#ED8888').replace('#', '');
+      const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
+      let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+      r = Math.round(r + (255 - r) * amt); g = Math.round(g + (255 - g) * amt); b = Math.round(b + (255 - b) * amt);
+      return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+    };
+    const CAT_DEFAULTS = Object.fromEntries(CATEGORIES.map(c => [c.key, c]));
+
     const DEFAULT_SETTINGS = {
       title: DEFAULT_TITLE,
       subtitle: DEFAULT_SUBTITLE,
@@ -119,6 +129,9 @@
       descs: Object.fromEntries(CATEGORIES.map(c => [c.key, ''])),
       fonts: DEFAULT_FONTS,
       bg: '',
+      catOrder: CATEGORIES.map(c => c.key),   // סדר המגירות (כולל חדשות)
+      catHidden: {},                          // key -> true אם מוסתרת
+      catColors: {},                          // key -> צבע מותאם
     };
     const mergeSettings = (b, o = {}) => ({
       title:    o.title    !== undefined ? o.title    : b.title,
@@ -128,7 +141,25 @@
       descs:  { ...b.descs,  ...(o.descs  || {}) },
       fonts:  { ...b.fonts,  ...(o.fonts  || {}) },
       bg: o.bg !== undefined ? o.bg : b.bg,
+      catOrder: o.catOrder !== undefined ? o.catOrder : b.catOrder,
+      catHidden: o.catHidden !== undefined ? o.catHidden : b.catHidden,
+      catColors: { ...b.catColors, ...(o.catColors || {}) },
     });
+    // בניית רשימת המגירות האפקטיבית מתוך ההגדרות
+    const catsFromSettings = (s) => {
+      const order = (s.catOrder && s.catOrder.length) ? s.catOrder : CATEGORIES.map(c => c.key);
+      return order.map(key => {
+        const def = CAT_DEFAULTS[key];
+        const color = (s.catColors && s.catColors[key]) || (def && def.color) || '#ED8888';
+        return {
+          key,
+          label: (s.labels && s.labels[key]) || (def && def.label) || 'מגירה',
+          color,
+          soft: (def && def.soft) || lighten(color),
+          hidden: !!(s.catHidden && s.catHidden[key]),
+        };
+      });
+    };
 
     const CatIconCtx = React.createContext({});
     const CatIcon = ({ k, size = 22, color }) => {
@@ -158,6 +189,11 @@
       if (link.href !== href) link.href = href;
     };
     const FontsCtx = React.createContext(DEFAULT_FONTS);
+    const CatsCtx = React.createContext(CATEGORIES);
+    const useCat = (key) => {
+      const cats = React.useContext(CatsCtx);
+      return cats.find(c => c.key === key) || cats[0] || { key, color: '#ED8888', soft: '#FBE6E6', label: '' };
+    };
 
     /* ====== המרת נתונים ====== */
     const fromDb = (r) => ({ id: r.id, category: r.category, title: r.title || '', description: r.description || '', url: r.url || '', image: r.image || '' });
@@ -197,7 +233,7 @@
 
     /* ====== כרטיס מוצר (תצוגה ציבורית) ====== */
     const ProductCard = ({ p }) => {
-      const c = catOf(p.category);
+      const c = useCat(p.category);
       const fonts = React.useContext(FontsCtx);
       const [copied, setCopied] = useState(false);
       const cMatch = (p.description || '').match(/(?:קוד\s*קופון|קופון|coupon|promo\s*code|code)\s*[:\-]?\s*([A-Za-z0-9]{3,16})/i);
@@ -254,7 +290,21 @@
     };
 
     /* ====== ממשק ניהול ====== */
-    const Admin = ({ products, profileImg, onSaveProfile, settings, onSaveSettings, onAdd, onUpdate, onDelete, onExit }) => {
+    const Admin = ({ products, profileImg, onSaveProfile, settings, onSaveSettings, cats, onAdd, onUpdate, onDelete, onExit }) => {
+      const addCat = () => {
+        const key = 'c' + Date.now().toString(36);
+        onSaveSettings({
+          catOrder: [...(settings.catOrder || cats.map(c => c.key)), key],
+          labels: { ...settings.labels, [key]: 'מגירה חדשה' },
+          catColors: { ...settings.catColors, [key]: '#9AA8C7' },
+        });
+      };
+      const toggleHideCat = (key) => onSaveSettings({ catHidden: { ...(settings.catHidden || {}), [key]: !(settings.catHidden && settings.catHidden[key]) } });
+      const setCatColor = (key, color) => onSaveSettings({ catColors: { ...settings.catColors, [key]: color } });
+      const deleteCat = (key) => {
+        if (!confirm('למחוק את המגירה? (מומלץ קודם להעביר/למחוק את המוצרים שבה)')) return;
+        onSaveSettings({ catOrder: (settings.catOrder || cats.map(c => c.key)).filter(k => k !== key) });
+      };
       const [form, setForm] = useState(EMPTY);
       const [editId, setEditId] = useState(null);
       const [saving, setSaving] = useState(false);
@@ -420,20 +470,29 @@
           {/* עריכת המגירות: שם, הסבר ואייקון */}
           <div className="bg-white rounded-3xl p-5 glam-card border border-[#f0e3d8] mb-6">
             <h3 className="font-bold text-[#263238] mb-1">המגירות (נושאי הקישורים)</h3>
-            <p className="text-xs text-[#a08e88] mb-4">ערכי את שם המגירה, הוסיפי הסבר קצר, ובחרי אייקון. השינויים נשמרים אוטומטית.</p>
+            <p className="text-xs text-[#a08e88] mb-4">הוסיפי מגירות, הסתירי, בחרי צבע ואייקון, וכתבי הסברים. נשמר אוטומטית.</p>
             <div className="space-y-5">
-              {CATEGORIES.map(c => {
+              {cats.map(c => {
                 const current = (settings.icons && settings.icons[c.key]) || DEFAULT_ICONS[c.key];
                 return (
-                  <div key={c.key} className="rounded-2xl border border-[#f3e7dd] p-3" style={{ background: c.soft + '40' }}>
-                    <input
-                      value={labels[c.key]}
-                      onChange={e => setLabels(prev => ({ ...prev, [c.key]: e.target.value }))}
-                      onBlur={() => onSaveSettings({ labels })}
-                      className="w-full bg-white rounded-lg px-3 py-2 font-semibold border border-[#e7d8cd] focus:outline-none focus:ring-2 focus:ring-[#ED8888]"
-                      style={{ color: c.color }} placeholder="שם המגירה" />
-                    <textarea rows={4}
-                      value={descs[c.key]}
+                  <div key={c.key} className={"rounded-2xl border border-[#f3e7dd] p-3 " + (c.hidden ? "opacity-60" : "")} style={{ background: c.soft + '40' }}>
+                    <div className="flex items-center gap-2">
+                      <input type="color" value={c.color} onChange={e => setCatColor(c.key, e.target.value)} title="צבע המגירה"
+                        className="w-9 h-9 rounded-lg border border-[#e7d8cd] bg-white p-0.5 flex-shrink-0 cursor-pointer" />
+                      <input
+                        value={labels[c.key] ?? c.label}
+                        onChange={e => setLabels(prev => ({ ...prev, [c.key]: e.target.value }))}
+                        onBlur={() => onSaveSettings({ labels })}
+                        className="flex-1 min-w-0 bg-white rounded-lg px-3 py-2 font-semibold border border-[#e7d8cd] focus:outline-none focus:ring-2 focus:ring-[#ED8888]"
+                        style={{ color: c.color }} placeholder="שם המגירה" />
+                      <button type="button" onClick={() => toggleHideCat(c.key)} title={c.hidden ? 'הצגה' : 'הסתרה'}
+                        className="px-2 py-2 rounded-lg border border-[#e7d8cd] bg-white text-base leading-none flex-shrink-0">{c.hidden ? '🙈' : '👁️'}</button>
+                      <button type="button" onClick={() => deleteCat(c.key)} title="מחיקה"
+                        className="p-2 rounded-lg border border-[#e7d8cd] bg-white text-[#c0848a] flex-shrink-0"><Trash size={15} /></button>
+                    </div>
+                    {c.hidden && <p className="text-[11px] text-[#a08e88] mt-1">מוסתרת מהדף הציבורי.</p>}
+                    <textarea rows={3}
+                      value={descs[c.key] ?? ''}
                       onChange={e => setDescs(prev => ({ ...prev, [c.key]: e.target.value }))}
                       onBlur={() => onSaveSettings({ descs })}
                       className="w-full mt-2 bg-white rounded-lg px-3 py-2 text-sm border border-[#e7d8cd] focus:outline-none focus:ring-2 focus:ring-[#ED8888]"
@@ -456,6 +515,9 @@
                 );
               })}
             </div>
+            <button type="button" onClick={addCat} className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-[#f0e4dc] hover:bg-[#e7d6c9] text-[#7c533c] font-semibold py-2.5 rounded-xl">
+              <Plus size={16} /> הוספת מגירה
+            </button>
           </div>
 
           {/* טופס הוספה / עריכה */}
@@ -464,7 +526,7 @@
             <div>
               <label className="block text-sm font-semibold mb-1 text-[#263238]">מגירה</label>
               <div className="grid grid-cols-2 gap-2">
-                {CATEGORIES.map(c => (
+                {cats.map(c => (
                   <button type="button" key={c.key} onClick={() => setForm(f => ({ ...f, category: c.key }))}
                     className={"flex items-center gap-2 p-2.5 rounded-xl border text-sm font-medium transition " + (form.category === c.key ? "text-white border-transparent" : "bg-white text-[#263238] border-[#e7d8cd]")}
                     style={form.category === c.key ? { background: c.color } : {}}>
@@ -493,7 +555,7 @@
               <label className="block text-sm font-semibold mb-1 text-[#263238]">תמונה (נטענת אוטומטית — אפשר גם להחליף)</label>
               <div className="flex items-center gap-3">
                 <div className="w-14 h-14 rounded-xl border border-[#e7d8cd] flex items-center justify-center overflow-hidden bg-[#FBF6F1] flex-shrink-0">
-                  {imgLoading ? <span className="text-[10px] text-[#a08e88] animate-pulse">טוען…</span> : (form.image ? <img src={form.image} className="w-full h-full object-cover" /> : <CatIcon k={form.category} size={22} color={catOf(form.category).color} />)}
+                  {imgLoading ? <span className="text-[10px] text-[#a08e88] animate-pulse">טוען…</span> : (form.image ? <img src={form.image} className="w-full h-full object-cover" /> : <CatIcon k={form.category} size={22} color={(cats.find(c => c.key === form.category) || cats[0] || {}).color} />)}
                 </div>
                 <button type="button" onClick={() => autoFetchImage(form.url)} disabled={imgLoading || !form.url}
                   className="text-xs bg-[#f0e4dc] text-[#7c533c] px-3 py-2 rounded-lg disabled:opacity-50">טעינה מהקישור</button>
@@ -514,7 +576,7 @@
           {/* רשימת המוצרים הקיימים */}
           <h3 className="font-bold text-[#263238] mb-3">המוצרים שלי ({products.length})</h3>
           <div className="space-y-5">
-            {CATEGORIES.map(c => {
+            {cats.map(c => {
               const list = products.filter(p => p.category === c.key);
               return (
                 <div key={c.key}>
@@ -628,6 +690,7 @@
       const [profileImg, setProfileImg] = useState('');
       const [metaId, setMetaId] = useState(null);
       const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+      const cats = catsFromSettings(settings);
 
       const load = async () => {
         setLoading(true); setLoadError(null);
@@ -648,7 +711,7 @@
               } catch (e) {}
             }
           }
-          setProducts(rows.filter(r => CATEGORIES.some(c => c.key === r.category)));
+          setProducts(rows.filter(r => r.category !== '_meta'));
         } catch (e) {
           console.error(e);
           setLoadError('שגיאה בטעינת המוצרים. רענני את הדף ונסי שוב.');
@@ -701,9 +764,11 @@
       if (admin) return (
         <CatIconCtx.Provider value={settings.icons}>
         <FontsCtx.Provider value={settings.fonts}>
+        <CatsCtx.Provider value={cats}>
           <Admin products={products} profileImg={profileImg} onSaveProfile={saveProfile}
-            settings={settings} onSaveSettings={saveSettings}
+            settings={settings} onSaveSettings={saveSettings} cats={cats}
             onAdd={add} onUpdate={update} onDelete={remove} onExit={() => setAdmin(false)} />
+        </CatsCtx.Provider>
         </FontsCtx.Provider>
         </CatIconCtx.Provider>
       );
@@ -711,6 +776,7 @@
       return (
         <CatIconCtx.Provider value={settings.icons}>
         <FontsCtx.Provider value={settings.fonts}>
+        <CatsCtx.Provider value={cats}>
         <div className="min-h-screen pb-16 w-full overflow-x-hidden">
           {/* שכבת רקע קבועה (יציבה במובייל, בלי חיתוך) */}
           {settings.bg && <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: -1, backgroundImage: `url(${settings.bg})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />}
@@ -742,8 +808,8 @@
           <main className="max-w-xl mx-auto px-4 space-y-4">
             {loading && <p className="text-center text-[#a08e88] py-10">טוען מוצרים...</p>}
             {loadError && <p className="text-center text-sm text-[#c0848a] bg-[#fbeeee] rounded-xl py-3 px-4">{loadError}</p>}
-            {!loading && CATEGORIES.map(cat => (
-              <Drawer key={cat.key} cat={{ ...cat, label: settings.labels[cat.key] || cat.label }}
+            {!loading && cats.filter(cat => !cat.hidden).map(cat => (
+              <Drawer key={cat.key} cat={cat}
                 desc={settings.descs[cat.key] || ''}
                 products={products.filter(p => p.category === cat.key)}
                 open={openKey === cat.key}
@@ -766,6 +832,7 @@
           </footer>
           <AccessibilityWidget />
         </div>
+        </CatsCtx.Provider>
         </FontsCtx.Provider>
         </CatIconCtx.Provider>
       );
