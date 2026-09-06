@@ -11,3 +11,6 @@ dist/
 .idea/
 .vercel/
 .claude/
+
+# קובץ Babel שיורד אוטומטית ע"י build.mjs (לא חלק מהקוד)
+.babel-cache/
