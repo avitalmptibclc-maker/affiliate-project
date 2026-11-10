@@ -1,0 +1,47 @@
+name: Supabase daily backup
+
+# גיבוי יומי של כל הטבלאות ב-Supabase (התוכנית החינמית לא כוללת גיבויים).
+# הגיבוי נשמר בלשונית Actions → הריצה → Artifacts, ל-30 יום.
+# המאגר ציבורי, ולכן הקובץ מוצפן בסיסמה (סוד SUPABASE_BACKUP_PASSWORD).
+# העותק המקומי של הסיסמה: _backups/backup-password.txt (לא עולה ל-GitHub).
+# דף חדש עם טבלה חדשה → להוסיף את שם הטבלה לרשימת TABLES למטה.
+# אפשר גם להריץ ידנית מלשונית Actions.
+
+on:
+  schedule:
+    - cron: '43 1 * * *'   # כל יום בערך ב-01:43 UTC
+  workflow_dispatch: {}
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TABLES: "consultants pending_consultants affiliate_products physiomation_products"
+    steps:
+      - name: Export tables
+        run: |
+          KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjb2RzbGNyYXFvdGZranBicXZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NTc0MDksImV4cCI6MjA5NzAzMzQwOX0.pZPR3XRqiy_hiwgI8NEsEAGo_3XBNiEdKrwgypcgI8A"
+          mkdir -p backup
+          for t in $TABLES; do
+            curl -sS -f --retry 4 --retry-delay 10 --retry-all-errors \
+              "https://ucodslcraqotfkjpbqvm.supabase.co/rest/v1/$t?select=*" \
+              -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -o "backup/$t.json"
+            echo "$t: $(jq length "backup/$t.json") rows"
+          done
+
+      - name: Encrypt
+        env:
+          PW: ${{ secrets.SUPABASE_BACKUP_PASSWORD }}
+        run: |
+          if [ -z "$PW" ]; then echo "חסר הסוד SUPABASE_BACKUP_PASSWORD"; exit 1; fi
+          tar -czf backup.tar.gz backup
+          openssl enc -aes-256-cbc -pbkdf2 -salt -in backup.tar.gz \
+            -out "supabase-backup-$(date -u +%F).tar.gz.enc" -pass env:PW
+          rm -rf backup backup.tar.gz
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: supabase-backup-${{ github.run_number }}
+          path: supabase-backup-*.tar.gz.enc
+          retention-days: 30

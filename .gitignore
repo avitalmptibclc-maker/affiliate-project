@@ -14,3 +14,6 @@ dist/
 
 # קובץ Babel שיורד אוטומטית ע"י build.mjs (לא חלק מהקוד)
 .babel-cache/
+
+# גיבויים מקומיים של Supabase (מכילים פרטים אישיים — לא עולים ל-GitHub)
+_backups/
